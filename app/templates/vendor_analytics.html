@@ -1,0 +1,229 @@
+{% extends "base_vendor.html" %}
+
+{% block title %}My Analytics{% endblock %}
+{% block heading %}My Analytics{% endblock %}
+
+{% block content %}
+
+<div class="card" id="vendorAnalyticsSection">
+
+    <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+        <h3>My Sales Analytics</h3>
+        <button id="exportVendorReportBtn" onclick="exportVendorReport()">⬇ Export Vendor Report (CSV)</button>
+    </div>
+
+    <div class="stats" id="analyticsStats">
+        <div class="stat-box">
+            <div class="stat-content">
+                <h4>Total Revenue</h4>
+                <h2 id="statTotalRevenue">-</h2>
+                <p>Completed sales</p>
+            </div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-content">
+                <h4>Total Orders</h4>
+                <h2 id="statTotalOrders">-</h2>
+                <p>Completed orders</p>
+            </div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-content">
+                <h4>Units Sold</h4>
+                <h2 id="statUnitsSold">-</h2>
+                <p>Across all products</p>
+            </div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-content">
+                <h4>Avg Order Value</h4>
+                <h2 id="statAvgOrderValue">-</h2>
+                <p>Per completed order</p>
+            </div>
+        </div>
+    </div>
+
+    <p id="analyticsEmptyNote" style="display:none; color:#888; text-align:center;">
+        No completed transactions yet — your analytics will appear once you make your first sale.
+    </p>
+
+</div>
+
+<br>
+
+<div class="chart-grid">
+    <div class="chart-card">
+        <h3>Top Products by Revenue</h3>
+        <canvas id="topProductsChart"></canvas>
+    </div>
+    <div class="chart-card">
+        <h3>Revenue by Category</h3>
+        <canvas id="revenueByCategoryChart"></canvas>
+    </div>
+</div>
+
+<br>
+
+<div class="chart-grid">
+    <div class="chart-card">
+        <h3>Monthly Revenue Trend</h3>
+        <canvas id="monthlyTrendChart"></canvas>
+    </div>
+    <div class="chart-card">
+        <h3>Order Status Mix</h3>
+        <canvas id="orderStatusChart"></canvas>
+    </div>
+</div>
+
+<script>
+
+const vendorId = localStorage.getItem("vendor_id");
+
+if(!vendorId){
+    window.location="/login";
+}
+
+let topProductsChartInstance = null;
+let revenueByCategoryChartInstance = null;
+let monthlyTrendChartInstance = null;
+let orderStatusChartInstance = null;
+
+const PALETTE = ["#2563eb", "#16a34a", "#f59e0b", "#dc2626", "#7c3aed", "#0891b2", "#db2777", "#65a30d"];
+
+function formatCurrency(n) {
+    if (n === null || n === undefined) return "—";
+    return "$" + Number(n).toLocaleString(undefined, { maximumFractionDigits: 2 });
+}
+
+loadVendorAnalytics();
+
+async function loadVendorAnalytics(){
+
+    if(!vendorId){
+        return;
+    }
+
+    try {
+        const response = await fetch(`/vendors/${vendorId}/analytics`);
+
+        if(!response.ok){
+            document.getElementById("analyticsEmptyNote").style.display = "block";
+            return;
+        }
+
+        const data = await response.json();
+
+        const summary = data.summary || {};
+        document.getElementById("statTotalRevenue").innerText = formatCurrency(summary.total_revenue);
+        document.getElementById("statTotalOrders").innerText = summary.total_orders ?? "0";
+        document.getElementById("statUnitsSold").innerText = summary.total_units_sold ?? "0";
+        document.getElementById("statAvgOrderValue").innerText = formatCurrency(summary.average_order_value);
+
+        if(!summary.total_orders){
+            document.getElementById("analyticsEmptyNote").style.display = "block";
+        }
+
+        renderTopProductsChart(data.top_products || []);
+        renderRevenueByCategoryChart(data.revenue_by_category || []);
+        renderMonthlyTrendChart(data.monthly_revenue_trend || []);
+        renderOrderStatusChart(data.order_status_breakdown || []);
+
+    } catch (err) {
+        console.error(err);
+        document.getElementById("analyticsEmptyNote").style.display = "block";
+    }
+
+}
+
+function exportVendorReport(){
+    if(!vendorId){
+        window.location = "/login";
+        return;
+    }
+    // Backend streams a CSV file (KPI summary, monthly trend, top
+    // products, category breakdown, order-status mix) as an attachment,
+    // same download pattern as the executive dashboard's Excel export.
+    window.location = `/vendors/${vendorId}/analytics/export`;
+}
+
+function renderTopProductsChart(products){
+    const ctx = document.getElementById("topProductsChart");
+    if(!ctx) return;
+    if(topProductsChartInstance) topProductsChartInstance.destroy();
+    topProductsChartInstance = new Chart(ctx, {
+        type: "bar",
+        data: {
+            labels: products.map(p => p.product_name),
+            datasets: [{
+                label: "Revenue",
+                data: products.map(p => p.total_revenue),
+                backgroundColor: "#2563eb",
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+}
+
+function renderRevenueByCategoryChart(categories){
+    const ctx = document.getElementById("revenueByCategoryChart");
+    if(!ctx) return;
+    if(revenueByCategoryChartInstance) revenueByCategoryChartInstance.destroy();
+    revenueByCategoryChartInstance = new Chart(ctx, {
+        type: "pie",
+        data: {
+            labels: categories.map(c => c.category_name),
+            datasets: [{
+                data: categories.map(c => c.total_revenue),
+                backgroundColor: PALETTE,
+            }]
+        },
+        options: { responsive: true }
+    });
+}
+
+function renderMonthlyTrendChart(trend){
+    const ctx = document.getElementById("monthlyTrendChart");
+    if(!ctx) return;
+    if(monthlyTrendChartInstance) monthlyTrendChartInstance.destroy();
+    monthlyTrendChartInstance = new Chart(ctx, {
+        type: "bar",
+        data: {
+            labels: trend.map(t => t.month),
+            datasets: [{
+                label: "Monthly Revenue",
+                data: trend.map(t => t.revenue),
+                backgroundColor: "#16a34a",
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+}
+
+function renderOrderStatusChart(statuses){
+    const ctx = document.getElementById("orderStatusChart");
+    if(!ctx) return;
+    if(orderStatusChartInstance) orderStatusChartInstance.destroy();
+    orderStatusChartInstance = new Chart(ctx, {
+        type: "pie",
+        data: {
+            labels: statuses.map(s => s.status),
+            datasets: [{
+                data: statuses.map(s => s.count),
+                backgroundColor: PALETTE,
+            }]
+        },
+        options: { responsive: true }
+    });
+}
+
+</script>
+
+{% endblock %}

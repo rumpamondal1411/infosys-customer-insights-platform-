@@ -1,0 +1,185 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Inventory Forecast{% endblock %}
+{% block heading %}Inventory Tracking & Forecasting{% endblock %}
+
+{% block content %}
+
+<p>Moving-average demand forecast built from historical transaction data,
+    persisted per product so accuracy can be checked over time
+    (see the <a href="/validation-page">Validation</a> page).</p>
+
+<div style="display:flex; gap:10px; align-items:center; margin-bottom:16px;">
+    <button class="btn btn-primary" onclick="runAllForecasts()">Run Forecast for All Products</button>
+    <label>Horizon (days):</label>
+    <input type="number" id="horizonInput" value="7" min="1" max="90" style="width:70px;">
+</div>
+
+<h3>Latest Forecasts</h3>
+
+<table border="1" cellpadding="10" width="100%">
+    <thead>
+        <tr>
+            <th>Product</th>
+            <th>Current Stock</th>
+            <th>Predicted Demand (next horizon)</th>
+            <th>Confidence</th>
+            <th>Forecast Date</th>
+            <th>History</th>
+        </tr>
+    </thead>
+    <tbody id="forecastTable"><tr><td colspan="6">Loading...</td></tr></tbody>
+</table>
+
+<br>
+
+<h3>Forecast a Single Product</h3>
+
+<div style="display:flex; gap:10px; align-items:center; margin-bottom:16px;">
+    <input type="number" id="singleProductId" placeholder="Product ID">
+    <button class="btn btn-success" onclick="forecastOne()">Generate Forecast</button>
+</div>
+
+<div id="singleResult"></div>
+
+<!-- Forecast history modal -->
+<div id="historyModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:50;">
+    <div style="background:white; max-width:600px; margin:60px auto; border-radius:12px; padding:24px; max-height:80vh; overflow-y:auto;">
+        <h3>Forecast History — Product <span id="historyProductId"></span></h3>
+        <table border="1" cellpadding="8" width="100%">
+            <thead><tr><th>Date</th><th>Predicted Stock</th><th>Confidence</th><th>Horizon</th></tr></thead>
+            <tbody id="historyTable"></tbody>
+        </table>
+        <br>
+        <button class="btn btn-danger" onclick="closeHistory()">Close</button>
+    </div>
+</div>
+
+<script>
+
+loadLatestForecasts();
+
+async function loadLatestForecasts(){
+    const [forecastsRes, productsRes] = await Promise.all([
+        fetch("/inventory/forecast/latest/all?limit=200"),
+        fetch("/products?limit=200")
+    ]);
+
+    const table = document.getElementById("forecastTable");
+
+    if(!forecastsRes.ok){
+        table.innerHTML = "<tr><td colspan='6'>Unable to load forecasts.</td></tr>";
+        return;
+    }
+
+    const forecasts = await forecastsRes.json();
+    const products = productsRes.ok ? await productsRes.json() : [];
+    const productById = {};
+    products.forEach(p => productById[p.id] = p);
+
+    // Keep only the most recent forecast per product
+    const latestByProduct = {};
+    forecasts.forEach(f => {
+        if(!latestByProduct[f.product_id] || new Date(f.forecast_date) > new Date(latestByProduct[f.product_id].forecast_date)){
+            latestByProduct[f.product_id] = f;
+        }
+    });
+    const rows = Object.values(latestByProduct);
+
+    if(rows.length === 0){
+        table.innerHTML = "<tr><td colspan='6'>No forecasts generated yet. Click 'Run Forecast for All Products' above.</td></tr>";
+        return;
+    }
+
+    // Fetch current stock for each product shown
+    const stockEntries = await Promise.all(rows.map(async f => {
+        try {
+            const res = await fetch(`/inventory/${f.product_id}`);
+            const inv = res.ok ? await res.json() : null;
+            return [f.product_id, inv ? inv.quantity_available : "-"];
+        } catch(e) { return [f.product_id, "-"]; }
+    }));
+    const stockByProduct = Object.fromEntries(stockEntries);
+
+    table.innerHTML = rows.map(f => {
+        const product = productById[f.product_id];
+        const confidencePct = Math.round(f.confidence_level * 100);
+        return `
+            <tr>
+                <td>${product ? product.name : "Product #" + f.product_id}</td>
+                <td>${stockByProduct[f.product_id]}</td>
+                <td>${f.predicted_stock} units / ${f.horizon_days} days</td>
+                <td>${confidencePct}%</td>
+                <td>${new Date(f.forecast_date).toLocaleString()}</td>
+                <td><button class="btn btn-primary" onclick="viewHistory(${f.product_id})">View History</button></td>
+            </tr>
+        `;
+    }).join("");
+}
+
+async function runAllForecasts(){
+    const horizon = document.getElementById("horizonInput").value || 7;
+    const response = await fetch(`/inventory/forecast/run-all?horizon_days=${horizon}`, { method: "POST" });
+    if(!response.ok){
+        alert("Unable to run forecasts");
+        return;
+    }
+    const results = await response.json();
+    alert(`Generated forecasts for ${results.length} product(s).`);
+    loadLatestForecasts();
+}
+
+async function forecastOne(){
+    const productId = document.getElementById("singleProductId").value;
+    if(!productId){ alert("Enter a product ID"); return; }
+    const horizon = document.getElementById("horizonInput").value || 7;
+
+    const response = await fetch(`/inventory/forecast/${productId}?horizon_days=${horizon}`);
+    const result = document.getElementById("singleResult");
+
+    if(!response.ok){
+        const err = await response.json().catch(() => ({}));
+        result.innerHTML = `<p style="color:#dc2626;">${err.detail || "Unable to generate forecast"}</p>`;
+        return;
+    }
+
+    const forecast = await response.json();
+    result.innerHTML = `
+        <div class="stat-card" style="max-width:400px;">
+            <h4>Product #${forecast.product_id}</h4>
+            <p>Predicted stock needed: <strong>${forecast.predicted_stock} units</strong> over the next ${forecast.horizon_days} days</p>
+            <p>Confidence: <strong>${Math.round(forecast.confidence_level * 100)}%</strong></p>
+        </div>
+    `;
+    loadLatestForecasts();
+}
+
+async function viewHistory(productId){
+    const response = await fetch(`/inventory/forecast/${productId}/history`);
+    const tbody = document.getElementById("historyTable");
+    document.getElementById("historyProductId").innerText = productId;
+
+    if(!response.ok){
+        tbody.innerHTML = "<tr><td colspan='4'>Unable to load history.</td></tr>";
+    } else {
+        const history = await response.json();
+        tbody.innerHTML = history.length === 0
+            ? "<tr><td colspan='4'>No forecast history yet.</td></tr>"
+            : history.map(h => `
+                <tr>
+                    <td>${new Date(h.forecast_date).toLocaleString()}</td>
+                    <td>${h.predicted_stock}</td>
+                    <td>${Math.round(h.confidence_level * 100)}%</td>
+                    <td>${h.horizon_days} days</td>
+                </tr>
+            `).join("");
+    }
+    document.getElementById("historyModal").style.display = "block";
+}
+function closeHistory(){
+    document.getElementById("historyModal").style.display = "none";
+}
+
+</script>
+
+{% endblock %}

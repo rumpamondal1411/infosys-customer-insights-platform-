@@ -1,0 +1,458 @@
+/* ============================================================
+   ShopSense — Professional Marketplace Theme
+   Loaded AFTER style.css so these rules win the cascade without
+   needing !important. Amazon/Flipkart-inspired: deep navy nav,
+   blue primary actions, orange "buy" accent, clean elevated cards.
+   ============================================================ */
+
+:root{
+    --sp-navy: #0f1b2b;
+    --sp-navy-2: #16273d;
+    --sp-blue: #2874f0;
+    --sp-blue-dark: #1a5fd0;
+    --sp-orange: #ff9f00;
+    --sp-orange-dark: #e88900;
+    --sp-green: #16a34a;
+    --sp-red: #dc2626;
+    --sp-bg: #f1f3f6;
+    --sp-card: #ffffff;
+    --sp-text: #212121;
+    --sp-muted: #6b7280;
+    --sp-border: #e5e7eb;
+    --sp-radius: 12px;
+    --sp-shadow: 0 2px 10px rgba(15, 27, 43, 0.08);
+    --sp-shadow-hover: 0 10px 24px rgba(15, 27, 43, 0.14);
+}
+
+body{
+    background: var(--sp-bg) !important;
+    color: var(--sp-text);
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+/* ---------------- Sidebar ---------------- */
+
+.sidebar{
+    background: linear-gradient(180deg, var(--sp-navy) 0%, var(--sp-navy-2) 100%) !important;
+    box-shadow: 2px 0 12px rgba(0,0,0,0.15);
+    display: flex;
+    flex-direction: column;
+}
+
+.logo h2{
+    color: #ffffff !important;
+    letter-spacing: 0.5px;
+}
+
+.logo span{
+    color: var(--sp-orange) !important;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 1px;
+}
+
+.menu li a{
+    color: #cbd5e1 !important;
+    border-radius: 8px;
+    margin: 2px 10px;
+    padding: 11px 14px !important;
+    transition: all 0.15s ease;
+    font-weight: 500;
+}
+
+.menu li a i{
+    color: #94a3b8 !important;
+    width: 20px;
+}
+
+.menu li a:hover{
+    background: rgba(255,255,255,0.08) !important;
+    color: #ffffff !important;
+    transform: translateX(2px);
+}
+
+.menu li a:hover i{
+    color: var(--sp-orange) !important;
+}
+
+.menu li.active a{
+    background: var(--sp-blue) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 10px rgba(40,116,240,0.4);
+}
+
+.logout-btn-side{
+    background: transparent !important;
+    border: 1.5px solid rgba(255,255,255,0.2) !important;
+    color: #f1f5f9 !important;
+    border-radius: 8px !important;
+    transition: all 0.15s ease;
+}
+
+.logout-btn-side:hover{
+    background: var(--sp-red) !important;
+    border-color: var(--sp-red) !important;
+}
+
+/* ---------------- Topbar ---------------- */
+
+.topbar{
+    background: #ffffff !important;
+    border-bottom: 1px solid var(--sp-border);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+
+.topbar h1, .topbar h2{
+    color: var(--sp-navy) !important;
+    font-weight: 700;
+}
+
+/* ---------------- Buttons ---------------- */
+
+button, .btn, input[type="submit"]{
+    background: var(--sp-blue);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+}
+
+button:hover, .btn:hover, input[type="submit"]:hover{
+    background: var(--sp-blue-dark);
+    box-shadow: 0 4px 10px rgba(40,116,240,0.3);
+}
+
+button:active, .btn:active{
+    transform: translateY(1px);
+}
+
+/* Primary "buy now / add to cart"-style CTAs opt in with .btn-cta */
+.btn-cta, button.btn-cta{
+    background: var(--sp-orange);
+}
+.btn-cta:hover{
+    background: var(--sp-orange-dark);
+    box-shadow: 0 4px 10px rgba(255,159,0,0.35);
+}
+
+input[type="text"], input[type="email"], input[type="password"],
+input[type="number"], input[type="search"], input[type="date"],
+select, textarea{
+    border: 1.5px solid var(--sp-border);
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 14px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    background: #fff;
+}
+
+input:focus, select:focus, textarea:focus{
+    outline: none;
+    border-color: var(--sp-blue);
+    box-shadow: 0 0 0 3px rgba(40,116,240,0.15);
+}
+
+/* ---------------- Cards / stat cards ---------------- */
+
+.stat-card{
+    border-radius: var(--sp-radius) !important;
+    box-shadow: var(--sp-shadow) !important;
+    border-left: 4px solid var(--sp-blue);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.stat-card:hover{
+    transform: translateY(-3px);
+    box-shadow: var(--sp-shadow-hover) !important;
+}
+
+.chart-card{
+    border-radius: var(--sp-radius) !important;
+    box-shadow: var(--sp-shadow) !important;
+    border: 1px solid var(--sp-border);
+}
+
+/* ---------------- Tables ---------------- */
+
+table{
+    border-radius: var(--sp-radius);
+    overflow: hidden;
+    box-shadow: var(--sp-shadow) !important;
+    border: 1px solid var(--sp-border);
+}
+
+th{
+    background: var(--sp-navy) !important;
+    color: #fff !important;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.4px;
+}
+
+tr:hover{
+    background: #eaf1ff !important;
+}
+
+/* ---------------- Product cards (Amazon/Flipkart style) ---------------- */
+
+.product-grid{
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 18px;
+}
+
+.product-card{
+    background: var(--sp-card) !important;
+    border: 1px solid var(--sp-border);
+    border-radius: var(--sp-radius) !important;
+    box-shadow: var(--sp-shadow) !important;
+    overflow: hidden;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.product-card:hover{
+    transform: translateY(-4px);
+    box-shadow: var(--sp-shadow-hover) !important;
+    border-color: var(--sp-blue);
+}
+
+.product-card-image{
+    background: #fafafa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 180px;
+    overflow: hidden;
+}
+
+.product-card-image img{
+    max-height: 100%;
+    max-width: 100%;
+    object-fit: contain;
+    transition: transform 0.25s ease;
+}
+
+.product-card:hover .product-card-image img{
+    transform: scale(1.06);
+}
+
+.product-card-noimage{
+    color: #b0b6bd;
+    font-size: 13px;
+}
+
+.product-card-body{
+    padding: 12px 14px 4px;
+}
+
+.product-card-name{
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--sp-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.product-card-sku{
+    font-size: 12px;
+    color: var(--sp-muted);
+    margin-top: 2px;
+}
+
+.product-card-price{
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--sp-green);
+    margin-top: 6px;
+}
+
+.product-card-price::before{
+    content: "";
+}
+
+.product-card-actions{
+    padding: 10px 14px 14px;
+    display: flex;
+    gap: 8px;
+}
+
+.product-card-actions .btn{
+    flex: 1;
+    background: var(--sp-orange);
+    text-align: center;
+    font-size: 13px;
+    padding: 9px 10px;
+}
+
+.product-card-actions .btn:hover{
+    background: var(--sp-orange-dark);
+}
+
+/* ---------------- Category boxes (centered grid) ---------------- */
+
+.category-grid{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 200px));
+    gap: 22px;
+    justify-content: center;   /* centers the whole grid within its container */
+    padding: 10px 0 30px;
+}
+
+.category-box{
+    background: var(--sp-card);
+    border: 1px solid var(--sp-border);
+    border-radius: var(--sp-radius);
+    box-shadow: var(--sp-shadow);
+    text-align: center;
+    padding: 22px 14px;
+    cursor: pointer;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.category-box:hover{
+    transform: translateY(-5px);
+    box-shadow: var(--sp-shadow-hover);
+    border-color: var(--sp-blue);
+}
+
+.category-box-icon{
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 12px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--sp-blue), var(--sp-blue-dark));
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+}
+
+.category-box-name{
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--sp-navy);
+}
+
+.category-box-desc{
+    font-size: 12px;
+    color: var(--sp-muted);
+    margin-top: 6px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.category-form-card{
+    background: var(--sp-card);
+    border-radius: var(--sp-radius);
+    box-shadow: var(--sp-shadow);
+    border: 1px solid var(--sp-border);
+    padding: 22px 24px;
+    max-width: 480px;
+    margin: 0 auto 30px;
+}
+
+.category-form-card label{
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--sp-navy);
+}
+
+.category-form-card input,
+.category-form-card textarea{
+    width: 100%;
+    margin: 6px 0 14px;
+}
+
+.section-heading{
+    text-align: center;
+    font-weight: 700;
+    color: var(--sp-navy);
+    margin: 6px 0 4px;
+}
+
+.section-subheading{
+    text-align: center;
+    color: var(--sp-muted);
+    font-size: 13px;
+    margin-bottom: 20px;
+}
+
+/* ---------------- Payment method selector (checkout) ---------------- */
+
+.payment-methods{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 10px 0 18px;
+}
+
+.payment-option{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 1.5px solid var(--sp-border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+    font-weight: 500;
+}
+
+.payment-option:hover{
+    border-color: var(--sp-blue);
+    background: #f5f9ff;
+}
+
+.payment-option input[type="radio"]{
+    accent-color: var(--sp-blue);
+    width: 18px;
+    height: 18px;
+}
+
+.payment-option.selected{
+    border-color: var(--sp-blue);
+    background: #eaf1ff;
+    box-shadow: 0 0 0 3px rgba(40,116,240,0.12);
+}
+
+.payment-option i{
+    color: var(--sp-blue);
+    font-size: 16px;
+    width: 20px;
+    text-align: center;
+}
+
+/* ---------------- Badges / status pills ---------------- */
+
+.badge, .status-pill{
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.badge-success{ background:#dcfce7; color:#15803d; }
+.badge-warning{ background:#fef3c7; color:#b45309; }
+.badge-danger{ background:#fee2e2; color:#dc2626; }
+.badge-info{ background:#dbeafe; color:#1d4ed8; }
+
+/* ---------------- Scrollbar polish ---------------- */
+
+::-webkit-scrollbar{ width: 10px; height: 10px; }
+::-webkit-scrollbar-track{ background: transparent; }
+::-webkit-scrollbar-thumb{ background: #c7ccd4; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover{ background: #a6acb6; }

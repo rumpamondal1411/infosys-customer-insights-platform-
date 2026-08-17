@@ -1,0 +1,576 @@
+
+{% extends "base_customer.html" %}
+
+{% block title %}My Profile{% endblock %}
+{% block heading %}My Profile{% endblock %}
+
+{% block content %}
+
+<!-- Personal Details -->
+<div class="card" id="personalInfoSection">
+
+    <div class="card-header">
+        <h3>Personal Details</h3>
+    </div>
+
+    <div style="display:flex; align-items:center; gap:20px; padding:10px 0;">
+        <div id="profileAvatar" style="width:64px; height:64px; border-radius:50%; background:#2563eb; color:white;
+                    display:flex; align-items:center; justify-content:center; font-size:26px; font-weight:700; flex-shrink:0;">
+            ?
+        </div>
+        <div style="flex:1;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <input type="text" id="profileName" style="font-size:18px; font-weight:600; border:1px solid #ddd; border-radius:6px; padding:6px 10px; flex:1; max-width:320px;">
+                <button class="btn btn-success" style="padding:6px 14px;" onclick="saveName()">Save</button>
+            </div>
+            <div style="color:#666; margin-top:6px;">
+                <span id="profileEmail">-</span>
+                &nbsp;·&nbsp; Member since <span id="profileMemberSince">-</span>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<br>
+
+<!-- Spending Summary -->
+<div class="card" id="spendingSummarySection">
+
+    <div class="card-header">
+        <h3>My Spending Summary</h3>
+    </div>
+
+    <div class="stats">
+        <div class="stat-box">
+            <div class="stat-content">
+                <h4>Total Orders</h4>
+                <h2 id="profileTotalOrders">-</h2>
+            </div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-content">
+                <h4>Total Spent</h4>
+                <h2 id="profileTotalSpent">-</h2>
+            </div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-content">
+                <h4>Avg Order Value</h4>
+                <h2 id="profileAvgOrderValue">-</h2>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<br>
+
+<!-- Delivery Address -->
+<div class="card" id="addressSection">
+
+    <div class="card-header">
+        <h3>Delivery Address <span style="font-size:12px; color:#dc2626;">(required to place orders)</span></h3>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; max-width:700px;">
+        <div style="grid-column:1 / -1;">
+            <label>Address Line</label>
+            <input type="text" id="profileAddrLine" style="width:100%; padding:8px; margin-top:4px;">
+        </div>
+        <div>
+            <label>City</label>
+            <input type="text" id="profileAddrCity" style="width:100%; padding:8px; margin-top:4px;">
+        </div>
+        <div>
+            <label>State</label>
+            <input type="text" id="profileAddrState" style="width:100%; padding:8px; margin-top:4px;">
+        </div>
+        <div>
+            <label>Pincode</label>
+            <input type="text" id="profileAddrPincode" style="width:100%; padding:8px; margin-top:4px;">
+        </div>
+        <div>
+            <label>Phone</label>
+            <input type="text" id="profileAddrPhone" style="width:100%; padding:8px; margin-top:4px;">
+        </div>
+    </div>
+
+    <br>
+    <button class="btn btn-success" onclick="saveProfileAddress()">Save Address</button>
+
+</div>
+
+<br>
+
+<!-- Order History -->
+<div class="card" id="orderHistorySection">
+
+    <div class="card-header">
+        <h3>My Order History</h3>
+    </div>
+
+    <div id="profileOrdersList">Loading your orders…</div>
+
+</div>
+
+<br>
+
+<!-- Wishlist -->
+<div class="card" id="wishlistProfileSection">
+
+    <div class="card-header">
+        <h3>My Wishlist</h3>
+    </div>
+
+    <div class="product-grid" id="profileWishlistGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:16px;">
+        Loading your wishlist…
+    </div>
+
+</div>
+
+<br>
+
+<!-- My Reviews -->
+<div class="card" id="reviewsSection">
+
+    <div class="card-header">
+        <h3>My Reviews</h3>
+    </div>
+
+    <div id="profileReviewsList">Loading your reviews…</div>
+
+</div>
+
+<!-- Rate Product modal (shared by Order History "Rate & Review" and My Reviews "Edit"; same
+     component/endpoint contract as the one on /customer-dashboard) -->
+<div id="rateModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:60;">
+    <div style="background:white; max-width:420px; margin:80px auto; border-radius:12px; padding:24px;">
+        <h3>Rate This Product</h3>
+        <div id="rateProductName" style="font-weight:600; margin-bottom:10px; color:#333;"></div>
+
+        <div id="rateStars" style="font-size:32px; letter-spacing:8px; margin-bottom:16px;">
+            <span data-star="1" onclick="selectRatingStars(1)" style="cursor:pointer; color:#ccc;">★</span><span data-star="2" onclick="selectRatingStars(2)" style="cursor:pointer; color:#ccc;">★</span><span data-star="3" onclick="selectRatingStars(3)" style="cursor:pointer; color:#ccc;">★</span><span data-star="4" onclick="selectRatingStars(4)" style="cursor:pointer; color:#ccc;">★</span><span data-star="5" onclick="selectRatingStars(5)" style="cursor:pointer; color:#ccc;">★</span>
+        </div>
+
+        <textarea id="rateReviewText" placeholder="Write a short review (optional)" rows="3"
+                  style="width:100%; padding:8px; margin-bottom:16px; box-sizing:border-box; font-family:inherit;"></textarea>
+
+        <div style="display:flex; gap:10px;">
+            <button class="btn btn-cta" onclick="submitRating()">Submit Rating</button>
+            <button class="btn btn-danger" onclick="closeRateModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script>
+
+const customerId = localStorage.getItem("customer_id");
+const productCache = {};
+
+document.addEventListener("DOMContentLoaded", () => {
+    loadPersonalInfo();
+    loadSpendingSummary();
+    loadOrders();
+    loadWishlist();
+    loadReviews();
+});
+
+// ---------------------------------------------------------------- Personal info
+
+async function loadPersonalInfo(){
+    if(!customerId) return;
+    const response = await fetch(`/customer/${customerId}`);
+    if(!response.ok) return;
+    const customer = await response.json();
+
+    document.getElementById("profileName").value = customer.name || "";
+    document.getElementById("profileEmail").innerText = customer.email || "";
+    document.getElementById("profileMemberSince").innerText = customer.created_at
+        ? new Date(customer.created_at).toLocaleDateString() : "-";
+    document.getElementById("profileAvatar").innerText = (customer.name || "?").trim().charAt(0).toUpperCase();
+
+    document.getElementById("profileAddrLine").value = customer.address_line || "";
+    document.getElementById("profileAddrCity").value = customer.city || "";
+    document.getElementById("profileAddrState").value = customer.state || "";
+    document.getElementById("profileAddrPincode").value = customer.pincode || "";
+    document.getElementById("profileAddrPhone").value = customer.phone || "";
+}
+
+async function saveName(){
+    const name = document.getElementById("profileName").value.trim();
+    if(!name){
+        alert("Name cannot be empty");
+        return;
+    }
+    const response = await fetch(`/customer/${customerId}/profile`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name })
+    });
+    if(!response.ok){
+        alert("Unable to save name");
+        return;
+    }
+    localStorage.setItem("customer_name", name);
+    document.getElementById("profileAvatar").innerText = name.charAt(0).toUpperCase();
+    alert("Name updated");
+}
+
+async function saveProfileAddress(){
+    const addressLine = document.getElementById("profileAddrLine").value.trim();
+    const city = document.getElementById("profileAddrCity").value.trim();
+    const state = document.getElementById("profileAddrState").value.trim();
+    const pincode = document.getElementById("profileAddrPincode").value.trim();
+    const phone = document.getElementById("profileAddrPhone").value.trim();
+
+    if(!addressLine || !city || !pincode || !phone){
+        alert("Address line, city, pincode, and phone are all required to place orders.");
+        return;
+    }
+
+    const response = await fetch(`/customer/${customerId}/address`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ address_line: addressLine, city, state: state || null, pincode, phone })
+    });
+    if(!response.ok){
+        alert("Unable to save address");
+        return;
+    }
+    alert("Address saved");
+}
+
+// ---------------------------------------------------------------- Spending summary
+
+async function loadSpendingSummary(){
+    if(!customerId) return;
+    try {
+        const response = await fetch(`/customer-analytics/customer/${customerId}/revenue-analysis`);
+        if(!response.ok) return;
+        const data = await response.json();
+        document.getElementById("profileTotalOrders").innerText = data.total_orders ?? 0;
+        document.getElementById("profileTotalSpent").innerText = "₹ " + (data.total_spent ?? 0).toLocaleString();
+        document.getElementById("profileAvgOrderValue").innerText = "₹ " + (data.avg_order_value ?? 0).toLocaleString();
+    } catch (err) { /* leave placeholders */ }
+}
+
+// ---------------------------------------------------------------- Orders
+
+const ORDER_STEPS = ["placed", "shipped", "delivered"];
+
+function orderStatusStepperHtml(orderStatus){
+    if(orderStatus === "cancelled"){
+        return `<div style="font-size:13px; color:#dc2626; font-weight:600; margin-top:6px;">✕ Order Cancelled</div>`;
+    }
+    if(orderStatus === "returned"){
+        return `<div style="font-size:13px; color:#2563eb; font-weight:600; margin-top:6px;">↩ Returned &amp; Refunded</div>`;
+    }
+    const currentIndex = ORDER_STEPS.indexOf(orderStatus);
+    return `
+        <div style="display:flex; align-items:center; gap:4px; margin-top:8px; font-size:12px;">
+            ${ORDER_STEPS.map((step, i) => {
+                const done = i <= currentIndex;
+                const label = step.charAt(0).toUpperCase() + step.slice(1);
+                return `
+                    <span style="color:${done ? '#16a34a' : '#bbb'}; font-weight:${i === currentIndex ? '700' : '400'};">
+                        ${done ? "●" : "○"} ${label}
+                    </span>
+                    ${i < ORDER_STEPS.length - 1 ? `<span style="color:${i < currentIndex ? '#16a34a' : '#ddd'};">──</span>` : ""}
+                `;
+            }).join("")}
+        </div>
+    `;
+}
+
+function orderActionsHtml(o){
+    const buttons = [];
+    if(o.order_status === "placed" || o.order_status === "shipped"){
+        buttons.push(`<button class="btn btn-danger" style="padding:6px 12px; font-size:13px;" onclick="cancelOrderAction(${o.id})">Cancel Order</button>`);
+    }
+    if(o.order_status === "delivered"){
+        buttons.push(`<button class="btn" style="padding:6px 12px; font-size:13px; background:#2563eb; color:white;" onclick="returnOrderAction(${o.id})">Return Order</button>`);
+        buttons.push(`<button class="btn btn-cta" style="padding:6px 12px; font-size:13px;" onclick="openRateModal(${o.product_id})">Rate &amp; Review</button>`);
+    }
+    return buttons.length ? `<div style="display:flex; gap:8px; margin-top:8px;">${buttons.join("")}</div>` : "";
+}
+
+async function loadOrders(){
+    const list = document.getElementById("profileOrdersList");
+    if(!customerId){
+        list.innerHTML = "<p>Please log in again to view your orders.</p>";
+        return;
+    }
+    try {
+        const response = await fetch(`/customer/${customerId}/orders`);
+        if(!response.ok){
+            list.innerHTML = "<p>Unable to load orders.</p>";
+            return;
+        }
+        const orders = await response.json();
+        if(!orders || orders.length === 0){
+            list.innerHTML = "<p>You haven't placed any orders yet.</p>";
+            return;
+        }
+
+        const missingIds = [...new Set(orders.map(o => o.product_id).filter(id => !productCache[id]))];
+        if(missingIds.length){
+            await Promise.all(missingIds.map(async id => {
+                try {
+                    const r = await fetch(`/products/${id}`);
+                    if(r.ok) productCache[id] = await r.json();
+                } catch(e) { /* fall back to #id below */ }
+            }));
+        }
+
+        const statusColor = { completed: "#16a34a", pending: "#b45309", cancelled: "#dc2626", refunded: "#2563eb" };
+
+        list.innerHTML = orders.map(o => {
+            const productName = productCache[o.product_id] ? productCache[o.product_id].name : `Product #${o.product_id}`;
+            o.product_name = productName;
+            const color = statusColor[o.status] || "#16a34a";
+            const eta = o.expected_delivery_date ? new Date(o.expected_delivery_date).toLocaleDateString() : null;
+            return `
+                <div style="padding:12px 0; border-bottom:1px solid #eee;">
+                    <div><strong>${productName}</strong> — Qty ${o.quantity} — ₹ ${o.total_amount}</div>
+                    <div style="font-size:13px; color:#666;">
+                        Order ${o.order_ref || ("#" + o.id)} · ${new Date(o.transaction_date).toLocaleString()}
+                        <span style="color:${color};"> · (${o.status})</span>
+                        <span style="color:#2563eb;"> · ${(o.payment_method || "cod").toUpperCase()}</span>
+                    </div>
+                    ${eta && (o.order_status === "placed" || o.order_status === "shipped")
+                        ? `<div style="font-size:12px; color:#888;">Expected delivery: ${eta} (delivery within 2 days)</div>`
+                        : ""}
+                    ${orderStatusStepperHtml(o.order_status)}
+                    ${orderActionsHtml(o)}
+                </div>
+            `;
+        }).join("");
+    } catch (err) {
+        list.innerHTML = "<p>Something went wrong loading your orders.</p>";
+    }
+}
+
+async function cancelOrderAction(transactionId){
+    if(!confirm("Cancel this order? Your item(s) have not been delivered yet.")) return;
+    const reason = prompt("Reason for cancellation (optional):") || null;
+    const response = await fetch(`/customer/${customerId}/orders/${transactionId}/cancel`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason })
+    });
+    if(!response.ok){
+        const err = await response.json().catch(() => ({}));
+        alert("Unable to cancel order: " + (err.detail || "please try again"));
+        return;
+    }
+    alert("Order cancelled.");
+    loadOrders();
+    loadSpendingSummary();
+}
+
+async function returnOrderAction(transactionId){
+    if(!confirm("Return this delivered order? A refund will be initiated.")) return;
+    const reason = prompt("Reason for return (optional):") || null;
+    const response = await fetch(`/customer/${customerId}/orders/${transactionId}/return`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason })
+    });
+    if(!response.ok){
+        const err = await response.json().catch(() => ({}));
+        alert("Unable to return order: " + (err.detail || "please try again"));
+        return;
+    }
+    alert("Return requested — your refund will be processed.");
+    loadOrders();
+    loadSpendingSummary();
+}
+
+// ---------------------------------------------------------------- Wishlist
+
+function isOutOfStock(p){
+    return (p.quantity_available !== undefined && p.quantity_available !== null) && p.quantity_available <= 0;
+}
+
+function ratingBadgeHtml(p){
+    return (p.rating !== undefined && p.rating !== null)
+        ? `⭐ ${typeof p.rating === "number" ? p.rating.toFixed(1) : p.rating} <span style="color:#888;">(${p.rating_count || 0})</span>`
+        : `<span style="color:#888;">No ratings yet</span>`;
+}
+
+async function loadWishlist(){
+    const grid = document.getElementById("profileWishlistGrid");
+    if(!customerId) return;
+    try {
+        const response = await fetch(`/customer/${customerId}/wishlist`);
+        if(!response.ok){
+            grid.innerHTML = "<p>Unable to load your wishlist.</p>";
+            return;
+        }
+        const items = await response.json();
+        if(!items || items.length === 0){
+            grid.innerHTML = "<p>Your wishlist is empty.</p>";
+            return;
+        }
+
+        grid.innerHTML = items.map(i => `
+            <div class="product-card">
+                <div class="product-card-image">
+                    ${i.image_url ? `<img src="${i.image_url}" alt="${i.product_name}">` : `<div class="product-card-noimage">No Image</div>`}
+                </div>
+                <div class="product-card-body">
+                    <div class="product-card-name" title="${i.product_name}">${i.product_name}</div>
+                    <div class="product-card-price">₹ ${i.price}</div>
+                    <div style="font-size:13px; margin-top:4px;">${ratingBadgeHtml(i)}</div>
+                    ${isOutOfStock(i) ? `<div style="color:#dc2626; font-weight:600; font-size:13px;">Out of Stock</div>` : ""}
+                </div>
+                <div class="product-card-actions">
+                    <button class="btn btn-danger" onclick="removeFromWishlist(${i.product_id})">Remove</button>
+                </div>
+            </div>
+        `).join("");
+    } catch (err) {
+        grid.innerHTML = "<p>Something went wrong loading your wishlist.</p>";
+    }
+}
+
+async function removeFromWishlist(productId){
+    await fetch(`/customer/${customerId}/wishlist/${productId}`, { method: "DELETE" });
+    loadWishlist();
+}
+
+// ---------------------------------------------------------------- Reviews
+
+async function loadReviews(){
+    const list = document.getElementById("profileReviewsList");
+    if(!customerId) return;
+    try {
+        const response = await fetch(`/customer/${customerId}/ratings`);
+        if(!response.ok){
+            list.innerHTML = "<p>Unable to load your reviews.</p>";
+            return;
+        }
+        const reviews = await response.json();
+        if(!reviews || reviews.length === 0){
+            list.innerHTML = "<p>You haven't reviewed any products yet — rate a delivered order above to leave your first review.</p>";
+            return;
+        }
+
+        reviews.forEach(r => {
+            if(!productCache[r.product_id]) productCache[r.product_id] = { name: r.product_name };
+        });
+
+        list.innerHTML = reviews.map(r => `
+            <div style="padding:12px 0; border-bottom:1px solid #eee;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <strong>${r.product_name}</strong>
+                    <button class="btn" style="padding:4px 10px; font-size:12px; background:#2563eb; color:white;"
+                            onclick="openRateModal(${r.product_id})">Edit</button>
+                </div>
+                <div style="color:#f59e0b; font-size:16px;">${"★".repeat(r.stars)}${"☆".repeat(5 - r.stars)}</div>
+                ${r.review_text ? `<div style="color:#444; font-size:14px; margin-top:4px;">${r.review_text}</div>` : ""}
+                <div style="color:#888; font-size:12px; margin-top:4px;">${new Date(r.updated_at).toLocaleDateString()}</div>
+            </div>
+        `).join("");
+    } catch (err) {
+        list.innerHTML = "<p>Something went wrong loading your reviews.</p>";
+    }
+}
+
+// ---------------------------------------------------------------- Rate Product modal
+// Same component/behavior as the "Rate this product" modal on /customer-dashboard —
+// kept consistent so both pages talk to the same endpoints the same way.
+
+let pendingRatingProductId = null;
+let selectedRatingStars = 0;
+
+function renderRateStars(){
+    document.querySelectorAll('#rateStars span').forEach(el => {
+        const starValue = parseInt(el.dataset.star, 10);
+        el.style.color = starValue <= selectedRatingStars ? "#f59e0b" : "#ccc";
+    });
+}
+
+function selectRatingStars(value){
+    selectedRatingStars = value;
+    renderRateStars();
+}
+
+async function openRateModal(productId){
+    if(!customerId){
+        alert("Please log in to rate this product.");
+        return;
+    }
+
+    pendingRatingProductId = productId;
+    selectedRatingStars = 0;
+    document.getElementById("rateReviewText").value = "";
+    renderRateStars();
+
+    const product = productCache[productId];
+    document.getElementById("rateProductName").innerText = product ? product.name : `Product #${productId}`;
+
+    try {
+        const response = await fetch(`/products/${productId}/my-rating?customer_id=${customerId}`);
+        if(response.ok){
+            const existing = await response.json();
+            if(existing.stars){
+                selectedRatingStars = existing.stars;
+                document.getElementById("rateReviewText").value = existing.review_text || "";
+                renderRateStars();
+            }
+        }
+    } catch (err) {
+        // Fine to just start from a blank rating if this lookup fails.
+    }
+
+    document.getElementById("rateModal").style.display = "block";
+}
+
+function closeRateModal(){
+    document.getElementById("rateModal").style.display = "none";
+    pendingRatingProductId = null;
+}
+
+async function submitRating(){
+    if(!pendingRatingProductId) return;
+    if(selectedRatingStars < 1){
+        alert("Please select at least 1 star before submitting.");
+        return;
+    }
+
+    try {
+        const response = await fetch(`/products/${pendingRatingProductId}/ratings`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                customer_id: parseInt(customerId),
+                stars: selectedRatingStars,
+                review_text: document.getElementById("rateReviewText").value.trim() || null,
+            })
+        });
+
+        if(!response.ok){
+            const err = await response.json().catch(() => ({}));
+            alert("Unable to submit rating: " + (err.detail || "please try again"));
+            return;
+        }
+
+        const summary = await response.json();
+        if(productCache[pendingRatingProductId]){
+            productCache[pendingRatingProductId].rating = summary.rating;
+            productCache[pendingRatingProductId].rating_count = summary.rating_count;
+        }
+
+        closeRateModal();
+        alert("Thanks! Your rating has been saved.");
+        loadReviews();
+    } catch (err) {
+        alert("Something went wrong submitting your rating. Please try again.");
+    }
+}
+
+</script>
+
+{% endblock %}

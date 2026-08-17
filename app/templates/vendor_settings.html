@@ -1,0 +1,311 @@
+
+{% extends "base_vendor.html" %}
+
+{% block title %}Settings{% endblock %}
+{% block heading %}Settings{% endblock %}
+
+{% block content %}
+
+<div class="settings-wrap">
+
+    <div class="settings-card">
+
+        <div class="settings-card-header">
+            <div class="settings-avatar" id="settingsAvatar">V</div>
+            <div>
+                <h3 id="settingsBusinessName">Business Profile</h3>
+                <p class="settings-subtext">Update the details customers and the marketplace see for your store.</p>
+            </div>
+        </div>
+
+        <div id="settingsStatus" class="settings-status"></div>
+
+        <form id="vendorSettingsForm">
+
+            <div class="settings-section-label">Business Details</div>
+
+            <div class="settings-grid">
+                <div class="settings-field">
+                    <label>Business Name</label>
+                    <input type="text" id="businessName">
+                </div>
+
+                <div class="settings-field">
+                    <label>Legal Entity Name</label>
+                    <input type="text" id="legalEntityName">
+                </div>
+
+                <div class="settings-field">
+                    <label>Primary Category</label>
+                    <input type="text" id="primaryCategory">
+                </div>
+
+                <div class="settings-field">
+                    <label>Commission Rate (0–1)</label>
+                    <input type="number" id="commissionRate" min="0" max="1" step="0.01">
+                </div>
+            </div>
+
+            <div class="settings-section-label">Contact &amp; Location</div>
+
+            <div class="settings-grid">
+                <div class="settings-field">
+                    <label>Contact Person</label>
+                    <input type="text" id="contactPerson">
+                </div>
+
+                <div class="settings-field">
+                    <label>Phone</label>
+                    <input type="text" id="phone">
+                </div>
+
+                <div class="settings-field">
+                    <label>Country</label>
+                    <input type="text" id="country">
+                </div>
+
+                <div class="settings-field settings-field-wide">
+                    <label>Address</label>
+                    <textarea id="address" rows="3"></textarea>
+                </div>
+            </div>
+
+            <div class="settings-actions">
+                <button type="button" class="btn-outline" onclick="loadVendorProfile()">Discard Changes</button>
+                <button type="submit" class="btn-primary-solid">Save Changes</button>
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<style>
+
+    .settings-wrap{
+        display:flex;
+        justify-content:center;
+        padding:10px 0 40px;
+    }
+
+    .settings-card{
+        width:100%;
+        max-width:680px;
+        background:#fff;
+        border-radius:14px;
+        box-shadow:0 4px 24px rgba(15,23,42,0.08);
+        border:1px solid #eef0f4;
+        padding:32px 36px 36px;
+    }
+
+    .settings-card-header{
+        display:flex;
+        align-items:center;
+        gap:16px;
+        margin-bottom:18px;
+        padding-bottom:20px;
+        border-bottom:1px solid #eef0f4;
+    }
+
+    .settings-avatar{
+        width:56px;
+        height:56px;
+        min-width:56px;
+        border-radius:50%;
+        background:linear-gradient(135deg,#2563eb,#7c3aed);
+        color:#fff;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        font-size:22px;
+        font-weight:700;
+    }
+
+    .settings-card-header h3{
+        margin:0 0 4px;
+        font-size:19px;
+        color:#111827;
+    }
+
+    .settings-subtext{
+        margin:0;
+        font-size:13px;
+        color:#6b7280;
+    }
+
+    .settings-status{
+        min-height:20px;
+        font-size:13px;
+        color:#2563eb;
+        margin-bottom:6px;
+    }
+
+    .settings-section-label{
+        font-size:12px;
+        font-weight:700;
+        text-transform:uppercase;
+        letter-spacing:0.04em;
+        color:#9ca3af;
+        margin:22px 0 12px;
+    }
+
+    .settings-grid{
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:16px 20px;
+    }
+
+    .settings-field{
+        display:flex;
+        flex-direction:column;
+        gap:6px;
+    }
+
+    .settings-field-wide{
+        grid-column:1 / -1;
+    }
+
+    .settings-field label{
+        font-size:12.5px;
+        font-weight:600;
+        color:#374151;
+    }
+
+    .settings-field input,
+    .settings-field textarea{
+        padding:10px 12px;
+        border:1px solid #d1d5db;
+        border-radius:8px;
+        font-size:14px;
+        font-family:inherit;
+        color:#111827;
+        background:#fafafa;
+        transition:border-color .15s, background .15s;
+    }
+
+    .settings-field input:focus,
+    .settings-field textarea:focus{
+        outline:none;
+        border-color:#2563eb;
+        background:#fff;
+    }
+
+    .settings-actions{
+        display:flex;
+        justify-content:flex-end;
+        gap:12px;
+        margin-top:28px;
+        padding-top:20px;
+        border-top:1px solid #eef0f4;
+    }
+
+    .btn-primary-solid{
+        background:#2563eb;
+        color:#fff;
+        border:none;
+        padding:11px 24px;
+        border-radius:8px;
+        font-size:14px;
+        font-weight:600;
+        cursor:pointer;
+        transition:background .15s;
+    }
+
+    .btn-primary-solid:hover{
+        background:#1d4ed8;
+    }
+
+    .btn-outline{
+        background:#fff;
+        color:#374151;
+        border:1px solid #d1d5db;
+        padding:11px 20px;
+        border-radius:8px;
+        font-size:14px;
+        font-weight:600;
+        cursor:pointer;
+        transition:background .15s;
+    }
+
+    .btn-outline:hover{
+        background:#f3f4f6;
+    }
+
+    @media (max-width:640px){
+        .settings-grid{ grid-template-columns:1fr; }
+        .settings-card{ padding:24px 20px 28px; }
+    }
+
+</style>
+
+<script>
+
+const vendorId = localStorage.getItem("vendor_id");
+
+async function loadVendorProfile() {
+    const statusEl = document.getElementById("settingsStatus");
+    statusEl.textContent = "Loading...";
+
+    const response = await fetch(`/vendors/${vendorId}`);
+    if (!response.ok) {
+        statusEl.textContent = "Failed to load profile.";
+        return;
+    }
+    const v = await response.json();
+
+    document.getElementById("businessName").value = v.business_name || "";
+    document.getElementById("legalEntityName").value = v.legal_entity_name || "";
+    document.getElementById("contactPerson").value = v.contact_person || "";
+    document.getElementById("phone").value = v.phone || "";
+    document.getElementById("primaryCategory").value = v.primary_category || "";
+    document.getElementById("address").value = v.address || "";
+    document.getElementById("country").value = v.country || "";
+    document.getElementById("commissionRate").value = v.commission_rate ?? "";
+
+    document.getElementById("settingsBusinessName").textContent = v.business_name || "Business Profile";
+    document.getElementById("settingsAvatar").textContent = (v.business_name || "V").trim().charAt(0).toUpperCase();
+
+    statusEl.textContent = "";
+}
+
+document.getElementById("vendorSettingsForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const payload = {
+        business_name: document.getElementById("businessName").value || null,
+        legal_entity_name: document.getElementById("legalEntityName").value || null,
+        contact_person: document.getElementById("contactPerson").value || null,
+        phone: document.getElementById("phone").value || null,
+        primary_category: document.getElementById("primaryCategory").value || null,
+        address: document.getElementById("address").value || null,
+        country: document.getElementById("country").value || null,
+        commission_rate: document.getElementById("commissionRate").value
+            ? parseFloat(document.getElementById("commissionRate").value)
+            : null,
+    };
+
+    const statusEl = document.getElementById("settingsStatus");
+    statusEl.textContent = "Saving...";
+
+    const response = await fetch(`/vendors/${vendorId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+    });
+
+    if (response.ok) {
+        statusEl.textContent = "Saved successfully.";
+        localStorage.setItem("business_name", payload.business_name || "");
+        loadVendorProfile();
+    } else {
+        const err = await response.json().catch(() => ({}));
+        statusEl.textContent = "Save failed: " + (err.detail || response.status);
+    }
+});
+
+loadVendorProfile();
+
+</script>
+
+{% endblock %}

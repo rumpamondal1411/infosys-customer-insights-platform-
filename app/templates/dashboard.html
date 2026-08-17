@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Marketplace Dashboard</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f7fb;
+            color: #1f2937;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: auto;
+            padding: 30px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 30px;
+        }
+
+        .header p {
+            margin-top: 8px;
+            color: #6b7280;
+        }
+
+        .refresh-btn {
+            border: none;
+            padding: 11px 18px;
+            border-radius: 8px;
+            background: #2563eb;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .refresh-btn:hover {
+            background: #1d4ed8;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 18px;
+            margin-bottom: 25px;
+        }
+
+        .card {
+            background: white;
+            padding: 22px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+        }
+
+        .card-title {
+            color: #6b7280;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .card-value {
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .charts {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .chart-card {
+            background: white;
+            padding: 22px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+            min-height: 350px;
+        }
+
+        .chart-card h2 {
+            margin-top: 0;
+            font-size: 18px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 270px;
+        }
+
+        .status {
+            margin-bottom: 20px;
+            padding: 12px 15px;
+            border-radius: 8px;
+            background: #eff6ff;
+            color: #1d4ed8;
+        }
+
+        @media (max-width: 1000px) {
+            .cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .charts {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 18px;
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .cards {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="header">
+
+        <div>
+            <h1>Marketplace Dashboard</h1>
+
+            <p>
+                Monitor marketplace sales, vendor performance
+                and product analytics.
+            </p>
+        </div>
+
+        <button class="refresh-btn" onclick="loadDashboard()">
+            Refresh
+        </button>
+
+    </div>
+
+
+    <div class="status" id="status">
+        Loading dashboard data...
+    </div>
+
+
+    <!-- KPI CARDS -->
+
+    <div class="cards">
+
+        <div class="card">
+
+            <div class="card-title">
+                Total Revenue
+            </div>
+
+            <div class="card-value" id="totalRevenue">
+                ₹0
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="card-title">
+                Total Orders
+            </div>
+
+            <div class="card-value" id="totalOrders">
+                0
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="card-title">
+                Units Sold
+            </div>
+
+            <div class="card-value" id="totalUnits">
+                0
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="card-title">
+                Average Order Value
+            </div>
+
+            <div class="card-value" id="averageOrder">
+                ₹0
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- CHARTS -->
+
+    <div class="charts">
+
+        <div class="chart-card">
+
+            <h2>Revenue by Vendor</h2>
+
+            <div class="chart-container">
+
+                <canvas id="vendorRevenueChart"></canvas>
+
+            </div>
+
+        </div>
+
+
+        <div class="chart-card">
+
+            <h2>Revenue by Category</h2>
+
+            <div class="chart-container">
+
+                <canvas id="categoryRevenueChart"></canvas>
+
+            </div>
+
+        </div>
+
+
+        <div class="chart-card">
+
+            <h2>Top Products</h2>
+
+            <div class="chart-container">
+
+                <canvas id="topProductsChart"></canvas>
+
+            </div>
+
+        </div>
+
+
+        <div class="chart-card">
+
+            <h2>Sales Summary</h2>
+
+            <div class="chart-container">
+
+                <canvas id="salesSummaryChart"></canvas>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+let vendorRevenueChart = null;
+let categoryRevenueChart = null;
+let topProductsChart = null;
+let salesSummaryChart = null;
+
+
+function money(value) {
+
+    return "₹" + Number(value || 0).toLocaleString(
+        "en-IN",
+        {
+            maximumFractionDigits: 2
+        }
+    );
+
+}
+
+
+async function loadDashboard() {
+
+    const status =
+        document.getElementById("status");
+
+    status.textContent =
+        "Loading dashboard data...";
+
+    try {
+
+        const response =
+            await fetch("/analytics/dashboard-stats");
+
+        if (!response.ok) {
+
+            throw new Error(
+                "Dashboard API returned " +
+                response.status
+            );
+
+        }
+
+        const data =
+            await response.json();
+
+        console.log("Dashboard data:", data);
+
+
+        /*
+         * The API may use slightly different
+         * field names depending on the current
+         * analytics service.
+         */
+
+        const summary =
+            data.sales_summary ||
+            data.summary ||
+            data;
+
+
+        document.getElementById(
+            "totalRevenue"
+        ).textContent =
+            money(
+                summary.total_revenue ||
+                data.total_revenue ||
+                0
+            );
+
+
+        document.getElementById(
+            "totalOrders"
+        ).textContent =
+            summary.total_orders ||
+            data.total_orders ||
+            0;
+
+
+        document.getElementById(
+            "totalUnits"
+        ).textContent =
+            summary.total_units_sold ||
+            data.total_units_sold ||
+            0;
+
+
+        const revenue =
+            Number(
+                summary.total_revenue ||
+                data.total_revenue ||
+                0
+            );
+
+        const orders =
+            Number(
+                summary.total_orders ||
+                data.total_orders ||
+                0
+            );
+
+        document.getElementById(
+            "averageOrder"
+        ).textContent =
+            money(
+                orders > 0
+                    ? revenue / orders
+                    : 0
+            );
+
+
+        /*
+         * Vendor revenue
+         */
+
+        const vendorData =
+            data.revenue_by_vendor ||
+            data.vendor_revenue ||
+            [];
+
+        createVendorChart(vendorData);
+
+
+        /*
+         * Category revenue
+         */
+
+        const categoryData =
+            data.revenue_by_category ||
+            data.category_revenue ||
+            [];
+
+        createCategoryChart(categoryData);
+
+
+        /*
+         * Top products
+         */
+
+        const productData =
+            data.top_products ||
+            [];
+
+        createProductChart(productData);
+
+
+        /*
+         * Summary chart
+         */
+
+        createSummaryChart(
+            revenue,
+            orders,
+            summary.total_units_sold ||
+            data.total_units_sold ||
+            0
+        );
+
+
+        status.textContent =
+            "Dashboard loaded successfully.";
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Dashboard error:",
+            error
+        );
+
+        /*
+         * Keep the page usable even if
+         * the analytics endpoint has a
+         * problem.
+         */
+
+        status.textContent =
+            "Dashboard loaded. Analytics data is currently unavailable.";
+
+    }
+
+}
+
+
+function createVendorChart(items) {
+
+    const labels = [];
+    const values = [];
+
+    items.forEach(item => {
+
+        labels.push(
+            item.vendor_name ||
+            item.business_name ||
+            item.vendor ||
+            ("Vendor " + (item.vendor_id || ""))
+        );
+
+        values.push(
+            Number(
+                item.total_revenue ||
+                item.revenue ||
+                item.amount ||
+                0
+            )
+        );
+
+    });
+
+
+    if (vendorRevenueChart) {
+
+        vendorRevenueChart.destroy();
+
+    }
+
+
+    vendorRevenueChart =
+        new Chart(
+            document.getElementById(
+                "vendorRevenueChart"
+            ),
+            {
+
+                type: "bar",
+
+                data: {
+
+                    labels: labels,
+
+                    datasets: [
+
+                        {
+
+                            label:
+                                "Revenue",
+
+                            data:
+                                values
+
+                        }
+
+                    ]
+
+                },
+
+                options: {
+
+                    responsive: true,
+
+                    maintainAspectRatio: false,
+
+                    plugins: {
+
+                        legend: {
+                            display: false
+                        }
+
+                    }
+
+                }
+
+            }
+        );
+
+}
+
+
+function createCategoryChart(items) {
+
+    const labels = [];
+    const values = [];
+
+    items.forEach(item => {
+
+        labels.push(
+            item.category_name ||
+            item.category ||
+            ("Category " +
+                (item.category_id || ""))
+        );
+
+        values.push(
+            Number(
+                item.total_revenue ||
+                item.revenue ||
+                item.amount ||
+                0
+            )
+        );
+
+    });
+
+
+    if (categoryRevenueChart) {
+
+        categoryRevenueChart.destroy();
+
+    }
+
+
+    categoryRevenueChart =
+        new Chart(
+            document.getElementById(
+                "categoryRevenueChart"
+            ),
+            {
+
+                type: "doughnut",
+
+                data: {
+
+                    labels: labels,
+
+                    datasets: [
+
+                        {
+
+                            label:
+                                "Revenue",
+
+                            data:
+                                values
+
+                        }
+
+                    ]
+
+                },
+
+                options: {
+
+                    responsive: true,
+
+                    maintainAspectRatio: false
+
+                }
+
+            }
+        );
+
+}
+
+
+function createProductChart(items) {
+
+    const labels = [];
+    const values = [];
+
+    items.forEach(item => {
+
+        labels.push(
+            item.product_name ||
+            item.name ||
+            ("Product " +
+                (item.product_id || ""))
+        );
+
+        values.push(
+            Number(
+                item.total_revenue ||
+                item.revenue ||
+                item.amount ||
+                0
+            )
+        );
+
+    });
+
+
+    if (topProductsChart) {
+
+        topProductsChart.destroy();
+
+    }
+
+
+    topProductsChart =
+        new Chart(
+            document.getElementById(
+                "topProductsChart"
+            ),
+            {
+
+                type: "bar",
+
+                data: {
+
+                    labels: labels,
+
+                    datasets: [
+
+                        {
+
+                            label:
+                                "Revenue",
+
+                            data:
+                                values
+
+                        }
+
+                    ]
+
+                },
+
+                options: {
+
+                    indexAxis: "y",
+
+                    responsive: true,
+
+                    maintainAspectRatio: false,
+
+                    plugins: {
+
+                        legend: {
+                            display: false
+                        }
+
+                    }
+
+                }
+
+            }
+        );
+
+}
+
+
+function createSummaryChart(
+    revenue,
+    orders,
+    units
+) {
+
+    if (salesSummaryChart) {
+
+        salesSummaryChart.destroy();
+
+    }
+
+
+    salesSummaryChart =
+        new Chart(
+            document.getElementById(
+                "salesSummaryChart"
+            ),
+            {
+
+                type: "bar",
+
+                data: {
+
+                    labels: [
+                        "Revenue",
+                        "Orders",
+                        "Units Sold"
+                    ],
+
+                    datasets: [
+
+                        {
+
+                            label:
+                                "Marketplace Summary",
+
+                            data: [
+                                revenue,
+                                orders,
+                                units
+                            ]
+
+                        }
+
+                    ]
+
+                },
+
+                options: {
+
+                    responsive: true,
+
+                    maintainAspectRatio: false
+
+                }
+
+            }
+
+        );
+
+}
+
+
+loadDashboard();
+
+</script>
+
+</body>
+</html>

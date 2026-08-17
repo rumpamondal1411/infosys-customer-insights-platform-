@@ -1,0 +1,123 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Category Management{% endblock %}
+
+{% block heading %}Category Management{% endblock %}
+
+{% block content %}
+
+<h2 class="section-heading">Add a New Category</h2>
+<p class="section-subheading">Categories group products so customers can browse the marketplace faster.</p>
+
+<div class="category-form-card">
+
+    <form id="categoryForm">
+
+        <label>Category Name</label>
+        <input type="text" id="name" required placeholder="e.g. Electronics">
+
+        <label>Description</label>
+        <textarea id="description" rows="3" placeholder="Short description shown to customers"></textarea>
+
+        <button type="submit" style="width:100%;">
+            <i class="fa-solid fa-plus"></i> Add Category
+        </button>
+
+    </form>
+
+</div>
+
+<hr>
+
+<h2 class="section-heading">All Categories</h2>
+<p class="section-subheading" id="categoryCount"></p>
+
+<div class="category-grid" id="categoryGrid">
+    <p style="grid-column:1/-1; text-align:center; color:#888;">Loading categories…</p>
+</div>
+
+<script>
+
+const CATEGORY_ICON_KEYWORDS = [
+    { keywords: ["mobile", "phone", "electronic"], icon: "fa-mobile-screen" },
+    { keywords: ["laptop", "computer", "pc"], icon: "fa-laptop" },
+    { keywords: ["audio", "headphone", "speaker"], icon: "fa-headphones" },
+    { keywords: ["shoe", "footwear", "sneaker"], icon: "fa-shoe-prints" },
+    { keywords: ["dress", "clothing", "fashion", "apparel", "shirt"], icon: "fa-shirt" },
+    { keywords: ["book"], icon: "fa-book-open" },
+    { keywords: ["grocery", "groceries", "food"], icon: "fa-cart-shopping" },
+    { keywords: ["kitchen", "appliance"], icon: "fa-blender" },
+    { keywords: ["furniture", "home"], icon: "fa-couch" },
+    { keywords: ["sport", "outdoor", "fitness", "gym"], icon: "fa-dumbbell" },
+    { keywords: ["beauty", "personal care", "cosmetic"], icon: "fa-heart-pulse" },
+    { keywords: ["toy", "kid", "baby"], icon: "fa-baby-carriage" },
+    { keywords: ["car", "auto", "vehicle"], icon: "fa-car" },
+    { keywords: ["jewel", "gem", "watch"], icon: "fa-gem" },
+    { keywords: ["game", "gaming"], icon: "fa-gamepad" },
+    { keywords: ["pet", "animal"], icon: "fa-paw" },
+];
+
+function iconFor(category){
+    const name = (category.name || "").toLowerCase();
+    const match = CATEGORY_ICON_KEYWORDS.find(entry =>
+        entry.keywords.some(kw => name.includes(kw))
+    );
+    return match ? match.icon : "fa-layer-group"; // generic fallback icon
+}
+
+loadCategories();
+
+async function loadCategories(){
+    const grid = document.getElementById("categoryGrid");
+    try {
+        const response = await fetch("/categories");
+        const categories = await response.json();
+
+        document.getElementById("categoryCount").innerText =
+            `${categories.length} categor${categories.length === 1 ? "y" : "ies"} in the marketplace`;
+
+        if(!categories.length){
+            grid.innerHTML = "<p style='grid-column:1/-1; text-align:center; color:#888;'>No categories yet — add one above.</p>";
+            return;
+        }
+        grid.innerHTML = categories.map((c) => `
+        <div class="category-box" title="${c.description ?? ''}">
+            <div class="category-box-icon"><i class="fa-solid ${iconFor(c)}"></i></div>
+                <div class="category-box-name">${c.name}</div>
+                <div class="category-box-desc">${c.description ?? "No description"}</div>
+            </div>
+        `).join("");
+    } catch (e) {
+        grid.innerHTML = "<p style='grid-column:1/-1; text-align:center; color:#dc2626;'>Unable to load categories.</p>";
+    }
+}
+
+document.getElementById("categoryForm").addEventListener("submit", async function(e){
+
+    e.preventDefault();
+
+    const payload = {
+        name: document.getElementById("name").value,
+        description: document.getElementById("description").value,
+        parent_id: null
+    };
+
+    const response = await fetch("/categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+    });
+
+    const data = await response.json();
+
+    if(response.ok){
+        document.getElementById("categoryForm").reset();
+        loadCategories();
+    }else{
+        alert(JSON.stringify(data, null, 2));
+    }
+
+});
+
+</script>
+{% endblock %}

@@ -1,0 +1,1034 @@
+{% extends "base_admin.html" %}
+
+{% block title %}System Health{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <h1>System Health</h1>
+        <p>Monitor the health and performance of ShopSense services.</p>
+    </div>
+    <div style="display:flex; gap:10px;">
+    <button class="btn btn-secondary" onclick="exportHealthReport()">
+        ⬇ Export Report
+    </button>
+    <button class="btn btn-primary" onclick="loadSystemHealth()">
+        ↻ Refresh
+    </button>
+</div>
+
+    
+</div>
+
+
+<!-- Overall Status -->
+<div class="analytics-card overall-health-card">
+    <div>
+        <h3>Overall System Status</h3>
+        <p id="overallMessage">Checking system health...</p>
+    </div>
+
+    <div id="overallStatus" class="status-badge">
+        Checking...
+    </div>
+</div>
+
+
+<!-- System Services -->
+<div class="section-title">
+    <h2>System Services</h2>
+</div>
+
+<div class="analytics-grid">
+    <!-- Application -->
+<div class="analytics-card health-card">
+    <div class="health-card-header">
+        <span class="health-eyebrow">Application</span>
+        <span id="applicationStatus" class="status-badge">
+            Checking...
+        </span>
+    </div>
+
+    <h3 class="health-card-title">FastAPI Backend</h3>
+    <p class="health-card-subtitle">Uvicorn &bull; Jinja2 Templates</p>
+
+    <div class="health-details">
+        <p>
+            <span>Uptime</span>
+            <strong id="applicationUptime">-</strong>
+        </p>
+
+        <p>
+            <span>Probe Latency</span>
+            <strong id="applicationProbe">-</strong>
+        </p>
+
+        <p>
+            <span>Ping Latency</span>
+            <strong id="applicationPing">-</strong>
+        </p>
+    </div>
+</div>
+
+
+<!-- Database -->
+<div class="analytics-card health-card">
+    <div class="health-card-header">
+        <span class="health-eyebrow">Database</span>
+        <span id="databaseStatus" class="status-badge">
+            Checking...
+        </span>
+    </div>
+
+    <h3 class="health-card-title">SQLite Database</h3>
+    <p class="health-card-subtitle">SQLAlchemy ORM</p>
+
+    <div class="health-details">
+        <p>
+            <span>Connection</span>
+            <strong id="databaseUptime">-</strong>
+        </p>
+
+        <p>
+            <span>Query Latency</span>
+            <strong id="databaseLatency">-</strong>
+        </p>
+    </div>
+</div>
+
+
+<!-- Analytics -->
+<div class="analytics-card health-card">
+    <div class="health-card-header">
+        <span class="health-eyebrow">Analytics</span>
+        <span id="analyticsStatus" class="status-badge">
+            Checking...
+        </span>
+    </div>
+
+    <h3 class="health-card-title">Pandas / NumPy Engine</h3>
+    <p class="health-card-subtitle">Chart.js Visualization</p>
+
+    <div class="health-details">
+        <p>
+            <span>Availability</span>
+            <strong id="analyticsUptime">-</strong>
+        </p>
+
+        <p>
+            <span>Processing Latency</span>
+            <strong id="analyticsLatency">-</strong>
+        </p>
+    </div>
+</div>
+
+
+<!-- Customer & Orders -->
+<div class="analytics-card health-card">
+    <div class="health-card-header">
+        <span class="health-eyebrow">Customer & Orders</span>
+        <span id="customerStatus" class="status-badge">
+            Checking...
+        </span>
+    </div>
+
+    <h3 class="health-card-title">FastAPI REST API</h3>
+    <p class="health-card-subtitle">Pydantic Validation</p>
+
+    <div class="health-details">
+        <p>
+            <span>Availability</span>
+            <strong id="customerUptime">-</strong>
+        </p>
+
+        <p>
+            <span>Response Latency</span>
+            <strong id="customerLatency">-</strong>
+        </p>
+    </div>
+</div>
+
+
+<!-- Machine Learning -->
+<div class="analytics-card health-card">
+    <div class="health-card-header">
+        <span class="health-eyebrow">ML / Forecasting</span>
+        <span id="mlStatus" class="status-badge">
+            Checking...
+        </span>
+    </div>
+
+    <h3 class="health-card-title">scikit-learn Engine</h3>
+    <p class="health-card-subtitle">MLflow Tracking</p>
+
+    <div class="health-details">
+        <p>
+            <span>Availability</span>
+            <strong id="mlUptime">-</strong>
+        </p>
+
+        <p>
+            <span>Processing Latency</span>
+            <strong id="mlLatency">-</strong>
+        </p>
+    </div>
+</div>
+
+    
+   
+
+
+   
+
+</div>
+
+
+<!-- Platform Statistics -->
+<div class="section-title">
+    <h2>Platform Statistics</h2>
+</div>
+
+<div class="analytics-grid">
+
+    <div class="analytics-card stat-card">
+        <span class="stat-label">Vendors</span>
+        <strong id="vendorsCount">0</strong>
+    </div>
+
+    <div class="analytics-card stat-card">
+        <span class="stat-label">Products</span>
+        <strong id="productsCount">0</strong>
+    </div>
+
+    <div class="analytics-card stat-card">
+        <span class="stat-label">Customers</span>
+        <strong id="customersCount">0</strong>
+    </div>
+
+    <div class="analytics-card stat-card">
+        <span class="stat-label">Transactions</span>
+        <strong id="transactionsCount">0</strong>
+    </div>
+
+</div>
+
+
+<!-- Test Results -->
+<div class="section-title">
+    <h2>Automated Test Results</h2>
+</div>
+
+<div class="analytics-card test-result-card">
+    <div class="health-card-header">
+    <div>
+        <h3>Pytest</h3>
+        <p id="testMessage">Running tests...</p>
+    </div>
+
+    <div style="display:flex; align-items:center; gap:10px;">
+        <button class="btn btn-primary" id="runTestSuiteBtn" onclick="loadSystemHealth()">
+            ▷ Run Test Suite
+        </button>
+
+        <span id="testStatus" class="status-badge">
+            Checking...
+        </span>
+    </div>
+</div>
+
+    
+
+    <div class="test-stats">
+
+        <div>
+            <span>Total</span>
+            <strong id="testTotal">0</strong>
+        </div>
+
+        <div>
+            <span>Passed</span>
+            <strong id="testPassed">0</strong>
+        </div>
+
+        <div>
+            <span>Failed</span>
+            <strong id="testFailed">0</strong>
+        </div>
+
+        <div>
+            <span>Skipped</span>
+            <strong id="testSkipped">0</strong>
+        </div>
+
+        <div>
+            <span>Errors</span>
+            <strong id="testErrors">0</strong>
+        </div>
+
+        <div>
+            <span>Pass Rate</span>
+            <strong id="testPassRate">0%</strong>
+        </div>
+
+    </div>
+
+    <div class="test-progress">
+        <div id="testProgressBar"></div>
+    </div>
+
+    <p class="test-duration">
+        Test duration:
+        <strong id="testDuration">-</strong>
+    </p>
+
+</div>
+
+
+<!-- Last Updated -->
+<div class="last-updated">
+    Last checked:
+    <strong id="lastUpdated">-</strong>
+</div>
+<style>
+
+/* -----------------------------------------
+   System Health Page — professional theme
+----------------------------------------- */
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #e8eaf0;
+}
+
+.page-header h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: #1a1d29;
+    letter-spacing: -0.3px;
+}
+
+.page-header p {
+    margin-top: 4px;
+    color: #8a8f9c;
+    font-size: 13.5px;
+}
+.btn-primary {
+    background: linear-gradient(135deg, #4f46e5, #4338ca);
+    border: none;
+    color: #fff;
+    padding: 9px 18px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(79, 70, 229, 0.3);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    white-space: nowrap;
+}
+
+.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(79, 70, 229, 0.38);
+}
+
+.btn-primary:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-secondary {
+    background: #ffffff;
+    border: 1px solid #d8dae3;
+    color: #4b5060;
+    padding: 9px 18px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    white-space: nowrap;
+}
+
+.btn-secondary:hover {
+    background: #f6f7fb;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(16, 24, 40, 0.08);
+}
+
+
+.section-title {
+    margin: 22px 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.section-title h2 {
+    font-size: 15px;
+    margin: 0;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: #4b5060;
+}
+
+.section-title::before {
+    content: "";
+    width: 4px;
+    height: 16px;
+    background: linear-gradient(180deg, #4f46e5, #7c3aed);
+    border-radius: 3px;
+}
+
+
+/* Base card look (previously undefined — this is what makes
+   every box a real card and lets grids sit side by side) */
+
+.analytics-card {
+    background: #ffffff;
+    border: 1px solid #edeef3;
+    border-radius: 12px;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.analytics-card:hover {
+    box-shadow: 0 6px 16px rgba(16, 24, 40, 0.08);
+    transform: translateY(-2px);
+}
+
+.analytics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 14px;
+}
+
+
+/* Overall */
+
+.overall-health-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 22px;
+    margin-bottom: 20px;
+    border-left: 4px solid #4f46e5;
+    background: linear-gradient(135deg, #f8f8ff 0%, #ffffff 60%);
+}
+
+.overall-health-card h3 {
+    margin: 0 0 4px;
+    font-size: 16px;
+    color: #1a1d29;
+}
+
+.overall-health-card p {
+    margin: 0;
+    color: #8a8f9c;
+    font-size: 13px;
+}
+
+
+/* Service cards */
+
+.health-card {
+    padding: 16px 18px;
+    border-top: 3px solid #4f46e5;
+}
+
+.analytics-grid .health-card:nth-of-type(1) { border-top-color: #2563eb; }
+.analytics-grid .health-card:nth-of-type(2) { border-top-color: #7c3aed; }
+.analytics-grid .health-card:nth-of-type(3) { border-top-color: #0d9488; }
+.analytics-grid .health-card:nth-of-type(4) { border-top-color: #ea580c; }
+.analytics-grid .health-card:nth-of-type(5) { border-top-color: #db2777; }
+
+.health-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.health-card-header h3 {
+    margin: 0;
+    font-size: 14.5px;
+    font-weight: 700;
+    color: #1a1d29;
+}
+
+.health-details {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid #edeef3;
+}
+
+.health-details p {
+    display: flex;
+    justify-content: space-between;
+    margin: 7px 0;
+    color: #8a8f9c;
+    font-size: 13px;
+}
+
+.health-details strong {
+    color: #1a1d29;
+    font-weight: 600;
+}
+
+.health-eyebrow {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: #8a8f9c;
+}
+
+.health-card-title {
+    margin: 10px 0 2px;
+    font-size: 17px;
+    font-weight: 800;
+    color: #1a1d29;
+}
+
+.health-card-subtitle {
+    margin: 0;
+    font-size: 12.5px;
+    color: #8a8f9c;
+}
+
+
+/* Status */
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 5px 11px;
+    border-radius: 20px;
+    font-size: 11.5px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.status-badge::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.status-healthy {
+    background: #e8f9f0;
+    color: #12875a;
+}
+
+.status-unhealthy {
+    background: #fdeaea;
+    color: #dc3545;
+}
+
+.status-warning {
+    background: #fff4d6;
+    color: #b77900;
+}
+
+
+/* Statistics */
+
+.stat-card {
+    padding: 16px 18px;
+    text-align: center;
+    border-top: 3px solid #4f46e5;
+}
+
+.analytics-grid .stat-card:nth-of-type(1) { border-top-color: #2563eb; }
+.analytics-grid .stat-card:nth-of-type(2) { border-top-color: #16a34a; }
+.analytics-grid .stat-card:nth-of-type(3) { border-top-color: #7c3aed; }
+.analytics-grid .stat-card:nth-of-type(4) { border-top-color: #ea580c; }
+
+.stat-label {
+    display: block;
+    color: #8a8f9c;
+    font-size: 12.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 6px;
+}
+
+.stat-card strong {
+    font-size: 24px;
+    font-weight: 800;
+    color: #1a1d29;
+}
+
+
+/* Test Results */
+
+.test-result-card {
+    padding: 20px 22px;
+    border-left: 4px solid #4338ca;
+}
+
+.test-result-card p {
+    margin: 3px 0;
+    color: #8a8f9c;
+    font-size: 13px;
+}
+
+.test-stats {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.test-stats div {
+    padding: 12px 8px;
+    background: #f6f7fb;
+    border: 1px solid #edeef3;
+    border-radius: 10px;
+    text-align: center;
+}
+
+.test-stats span {
+    display: block;
+    color: #8a8f9c;
+    font-size: 11.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 5px;
+}
+
+.test-stats strong {
+    font-size: 18px;
+    font-weight: 800;
+    color: #1a1d29;
+}
+
+/* colour-code the individual pytest counters */
+.test-stats div:nth-child(2) strong { color: #16a34a; }
+.test-stats div:nth-child(3) strong { color: #dc3545; }
+.test-stats div:nth-child(4) strong { color: #b77900; }
+.test-stats div:nth-child(5) strong { color: #dc3545; }
+.test-stats div:nth-child(6) strong { color: #4f46e5; }
+
+
+.test-progress {
+    width: 100%;
+    height: 8px;
+    background: #edeef3;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 18px;
+}
+
+.test-progress div {
+    width: 0%;
+    height: 100%;
+    background: linear-gradient(90deg, #22c55e, #16a34a);
+    transition: width 0.4s ease;
+}
+
+
+.test-duration {
+    margin-top: 10px !important;
+}
+
+
+/* Last Updated */
+
+.last-updated {
+    margin-top: 16px;
+    color: #a0a4b0;
+    font-size: 12.5px;
+    text-align: right;
+}
+
+
+/* Responsive */
+
+@media (max-width: 900px) {
+
+    .test-stats {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+}
+
+@media (max-width: 600px) {
+
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .overall-health-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .test-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+}
+
+</style>
+
+
+
+
+
+
+
+
+ 
+
+
+<script>
+
+async function loadSystemHealth() {
+
+    try {
+
+        const response = await fetch("/admin/system-health-data");
+
+        if (!response.ok) {
+            throw new Error("Failed to load system health");
+        }
+
+        const data = await response.json();
+        lastHealthData = data;
+
+
+        /* ------------------------------------
+           Overall
+        ------------------------------------ */
+
+        const overallStatus =
+            document.getElementById("overallStatus");
+
+        overallStatus.textContent =
+            data.overall.status;
+
+        setStatusClass(
+            overallStatus,
+            data.overall.status
+        );
+
+
+        document.getElementById("overallMessage").textContent =
+            data.overall.status === "Healthy"
+                ? "All major ShopSense services are operating normally."
+                : "One or more ShopSense services require attention.";
+
+
+        /* ------------------------------------
+           Application
+        ------------------------------------ */
+
+        setStatus(
+            "applicationStatus",
+            data.application.status
+        );
+
+        document.getElementById("applicationUptime").textContent =
+            data.application.uptime;
+
+        document.getElementById("applicationProbe").textContent =
+            data.application.probe_latency_ms + " ms";
+
+        document.getElementById("applicationPing").textContent =
+            data.application.ping_latency_ms + " ms";
+
+
+        /* ------------------------------------
+           Database
+        ------------------------------------ */
+
+        setStatus(
+            "databaseStatus",
+            data.database.status
+        );
+
+        document.getElementById("databaseUptime").textContent =
+            data.database.uptime;
+
+        document.getElementById("databaseLatency").textContent =
+            data.database.query_latency_ms + " ms";
+
+
+        /* ------------------------------------
+           Analytics
+        ------------------------------------ */
+
+        setStatus(
+            "analyticsStatus",
+            data.analytics.status
+        );
+
+        document.getElementById("analyticsUptime").textContent =
+            data.analytics.uptime;
+
+        document.getElementById("analyticsLatency").textContent =
+            data.analytics.processing_latency_ms + " ms";
+
+
+        /* ------------------------------------
+           Customer & Orders
+        ------------------------------------ */
+
+        setStatus(
+            "customerStatus",
+            data.customer_orders.status
+        );
+
+        document.getElementById("customerUptime").textContent =
+            data.customer_orders.uptime;
+
+        document.getElementById("customerLatency").textContent =
+            data.customer_orders.response_latency_ms + " ms";
+
+
+        /* ------------------------------------
+           ML
+        ------------------------------------ */
+
+        setStatus(
+            "mlStatus",
+            data.ml.status
+        );
+
+        document.getElementById("mlUptime").textContent =
+            data.ml.uptime;
+
+        document.getElementById("mlLatency").textContent =
+            data.ml.processing_latency_ms + " ms";
+
+
+        /* ------------------------------------
+           Statistics
+        ------------------------------------ */
+
+        document.getElementById("vendorsCount").textContent =
+            data.statistics.vendors;
+
+        document.getElementById("productsCount").textContent =
+            data.statistics.products;
+
+        document.getElementById("customersCount").textContent =
+            data.statistics.customers;
+
+        document.getElementById("transactionsCount").textContent =
+            data.statistics.transactions;
+
+
+        /* ------------------------------------
+           Tests
+        ------------------------------------ */
+
+        setStatus(
+            "testStatus",
+            data.tests.status
+        );
+
+        document.getElementById("testMessage").textContent =
+            data.tests.message;
+
+        document.getElementById("testTotal").textContent =
+            data.tests.total;
+
+        document.getElementById("testPassed").textContent =
+            data.tests.passed;
+
+        document.getElementById("testFailed").textContent =
+            data.tests.failed;
+
+        document.getElementById("testSkipped").textContent =
+            data.tests.skipped;
+
+        document.getElementById("testErrors").textContent =
+            data.tests.errors;
+
+        document.getElementById("testPassRate").textContent =
+            data.tests.pass_rate + "%";
+
+        document.getElementById("testDuration").textContent =
+            data.tests.duration_ms + " ms";
+
+
+        const progress =
+            document.getElementById("testProgressBar");
+
+        progress.style.width =
+            data.tests.pass_rate + "%";
+
+
+        /* ------------------------------------
+           Last Updated
+        ------------------------------------ */
+
+        const date = new Date(data.timestamp);
+
+        document.getElementById("lastUpdated").textContent =
+            date.toLocaleString();
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        document.getElementById("overallStatus").textContent =
+            "Unavailable";
+
+        setStatusClass(
+            document.getElementById("overallStatus"),
+            "Unhealthy"
+        );
+
+        document.getElementById("overallMessage").textContent =
+            "Unable to retrieve system health information.";
+
+    }
+
+}
+
+let lastHealthData = null;
+
+function exportHealthReport() {
+
+    if (!lastHealthData) {
+        alert("No system health data loaded yet — click Refresh first.");
+        return;
+    }
+
+    const d = lastHealthData;
+    const line = "=".repeat(60);
+    const rows = [];
+
+    rows.push(line);
+    rows.push("SHOPSENSE — SYSTEM HEALTH REPORT");
+    rows.push(line);
+    rows.push(`Generated: ${new Date(d.timestamp).toLocaleString()}`);
+    rows.push(`Overall Status: ${d.overall.status}`);
+    rows.push("");
+
+    rows.push("SYSTEM SERVICES");
+    rows.push("-".repeat(60));
+    rows.push(`Application     : ${d.application.status}  |  Uptime: ${d.application.uptime}  |  Probe: ${d.application.probe_latency_ms} ms  |  Ping: ${d.application.ping_latency_ms} ms`);
+    rows.push(`Database        : ${d.database.status}  |  Connection: ${d.database.uptime}  |  Query Latency: ${d.database.query_latency_ms} ms`);
+    rows.push(`Analytics       : ${d.analytics.status}  |  Availability: ${d.analytics.uptime}  |  Processing: ${d.analytics.processing_latency_ms} ms`);
+    rows.push(`Customer&Orders : ${d.customer_orders.status}  |  Availability: ${d.customer_orders.uptime}  |  Response: ${d.customer_orders.response_latency_ms} ms`);
+    rows.push(`ML/Forecasting  : ${d.ml.status}  |  Availability: ${d.ml.uptime}  |  Processing: ${d.ml.processing_latency_ms} ms`);
+    rows.push("");
+
+    rows.push("PLATFORM STATISTICS");
+    rows.push("-".repeat(60));
+    rows.push(`Vendors: ${d.statistics.vendors}   Products: ${d.statistics.products}   Customers: ${d.statistics.customers}   Transactions: ${d.statistics.transactions}`);
+    rows.push("");
+
+    rows.push("AUTOMATED TEST RESULTS (Pytest)");
+    rows.push("-".repeat(60));
+    rows.push(`Status: ${d.tests.status}  |  ${d.tests.message}`);
+    rows.push(`Total: ${d.tests.total}   Passed: ${d.tests.passed}   Failed: ${d.tests.failed}   Skipped: ${d.tests.skipped}   Errors: ${d.tests.errors}`);
+    rows.push(`Pass Rate: ${d.tests.pass_rate}%   Duration: ${d.tests.duration_ms} ms`);
+    rows.push(line);
+
+    const blob = new Blob([rows.join("\n")], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const stamp = new Date(d.timestamp).toISOString().replace(/[:.]/g, "-");
+
+    a.href = url;
+    a.download = `shopsense-system-health-${stamp}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+}
+
+
+/* -----------------------------------------
+   Status Helper
+----------------------------------------- */
+
+function setStatus(elementId, status) {
+
+    const element =
+        document.getElementById(elementId);
+
+    element.textContent = status;
+
+    setStatusClass(element, status);
+
+}
+
+
+function setStatusClass(element, status) {
+
+    element.classList.remove(
+        "status-healthy",
+        "status-unhealthy",
+        "status-warning"
+    );
+
+    if (
+        status === "Healthy" ||
+        status === "Passed"
+    ) {
+
+        element.classList.add(
+            "status-healthy"
+        );
+
+    } else if (
+        status === "Unhealthy" ||
+        status === "Failed" ||
+        status === "Error"
+    ) {
+
+        element.classList.add(
+            "status-unhealthy"
+        );
+
+    } else {
+
+        element.classList.add(
+            "status-warning"
+        );
+
+    }
+
+}
+
+
+/* -----------------------------------------
+   Load automatically
+----------------------------------------- */
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+
+        loadSystemHealth();
+
+    }
+);
+
+</script>
+
+{% endblock %}

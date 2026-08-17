@@ -1,0 +1,151 @@
+{% extends "base_vendor.html" %}
+
+{% block title %}Transactions{% endblock %}
+
+{% block heading %}Transaction Management{% endblock %}
+
+{% block content %}
+
+<h2>Record Sale</h2>
+
+<form id="transactionForm">
+
+<label>Product ID</label><br>
+<input type="number" id="product_id" required><br><br>
+
+<label>Quantity Sold</label><br>
+<input type="number" id="quantity" required><br><br>
+
+<label>Unit Price</label><br>
+<input type="number" step="0.01" id="unit_price" required><br><br>
+
+<button type="submit">
+Record Sale
+</button>
+
+</form>
+
+<hr>
+
+<h2>Sales History</h2>
+
+<table border="1" cellpadding="10" width="100%">
+
+<thead>
+
+<tr>
+
+<th>ID</th>
+<th>Product</th>
+<th>Quantity</th>
+<th>Unit Price</th>
+<th>Total</th>
+
+</tr>
+
+</thead>
+
+<tbody id="transactionTable">
+
+</tbody>
+
+</table>
+
+<script>
+
+const vendorId = localStorage.getItem("vendor_id");
+
+loadTransactions();
+
+async function loadTransactions(){
+
+    const response = await fetch("/transactions?vendor_id=" + vendorId);
+
+    if(!response.ok){
+
+        alert("Unable to load transactions");
+
+        return;
+
+    }
+
+    const transactions = await response.json();
+
+    let rows = "";
+
+    transactions.forEach(t=>{
+
+        rows += `
+        <tr>
+
+        <td>${t.id}</td>
+
+        <td>${t.product_id}</td>
+
+        <td>${t.quantity}</td>
+
+        <td>${t.unit_price}</td>
+
+        <td>${t.total_amount}</td>
+
+        </tr>
+        `;
+
+    });
+
+    document.getElementById("transactionTable").innerHTML = rows;
+
+}
+
+document.getElementById("transactionForm").addEventListener("submit", async function(e){
+
+    e.preventDefault();
+    alert("Button clicked");
+
+    const response = await fetch("/transactions",{
+
+        method:"POST",
+
+        headers:{
+            "Content-Type":"application/json"
+        },
+
+        body:JSON.stringify({
+            vendor_id:Number(vendorId),
+
+            product_id:Number(document.getElementById("product_id").value),
+
+            customer_id: 0,
+
+            quantity:Number(document.getElementById("quantity").value),
+
+            unit_price:Number(document.getElementById("unit_price").value),
+
+            status:"completed"
+
+    })
+
+    });
+
+    const data = await response.json();
+
+    if(response.ok){
+
+        alert("Sale Recorded Successfully");
+
+        document.getElementById("transactionForm").reset();
+
+        loadTransactions();
+
+    }else{
+
+        console.log(data);
+        alert(JSON.stringify(data, null, 2));
+
+    }
+
+});
+
+</script>
+
+{% endblock %}

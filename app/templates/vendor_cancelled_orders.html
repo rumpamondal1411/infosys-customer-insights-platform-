@@ -1,0 +1,81 @@
+
+{% extends "base_vendor.html" %}
+
+{% block title %}Cancelled Orders{% endblock %}
+{% block heading %}Cancelled Orders{% endblock %}
+
+{% block content %}
+
+<div class="section-title">
+    <h3>Cancelled Orders</h3>
+    <button onclick="loadCancelledOrders()" class="btn btn-primary">🔄 Refresh</button>
+</div>
+
+<p id="cancelledStatus" style="color:#2563eb; min-height:20px;"></p>
+
+<table border="1" width="100%" cellpadding="10">
+    <thead>
+        <tr>
+            <th>Order Ref</th>
+            <th>Product</th>
+            <th>Quantity</th>
+            <th>Amount</th>
+            <th>Cancelled On</th>
+            <th>Reason</th>
+        </tr>
+    </thead>
+    <tbody id="cancelledTable"></tbody>
+</table>
+
+<script>
+
+const vendorId = localStorage.getItem("vendor_id");
+
+async function loadCancelledOrders() {
+    const statusEl = document.getElementById("cancelledStatus");
+    statusEl.textContent = "Loading...";
+
+    try {
+        const [txnRes, productRes] = await Promise.all([
+            fetch(`/transactions?vendor_id=${vendorId}&limit=1000`),
+            fetch(`/products?vendor_id=${vendorId}`),
+        ]);
+        if (!txnRes.ok) throw new Error(`transactions request failed (${txnRes.status})`);
+        if (!productRes.ok) throw new Error(`products request failed (${productRes.status})`);
+
+        const transactions = await txnRes.json();
+        const products = await productRes.json();
+        const productNameById = {};
+        products.forEach(p => { productNameById[p.id] = p.name; });
+
+        const cancelled = transactions.filter(t => t.status === "cancelled");
+
+        const tbody = document.getElementById("cancelledTable");
+        if (!cancelled.length) {
+            tbody.innerHTML = `<tr><td colspan="6">No cancelled orders. 🎉</td></tr>`;
+        } else {
+            tbody.innerHTML = cancelled.map(t => `
+                <tr>
+                    <td>${t.order_ref ?? t.id}</td>
+                    <td>${productNameById[t.product_id] ?? ("Product #" + t.product_id)}</td>
+                    <td>${t.quantity}</td>
+                    <td>₹ ${t.total_amount}</td>
+                    <td>${t.cancelled_at ? new Date(t.cancelled_at).toLocaleString() : "—"}</td>
+                    <td>${t.cancellation_reason ?? "Not provided"}</td>
+                </tr>
+            `).join("");
+        }
+
+        statusEl.textContent = `${cancelled.length} cancelled order(s) — updated ${new Date().toLocaleTimeString()}`;
+    } catch (err) {
+        statusEl.textContent = `Failed to load cancelled orders: ${err.message}`;
+        document.getElementById("cancelledTable").innerHTML =
+            `<tr><td colspan="6" style="color:#dc2626;">Could not load cancelled orders. Check your connection and refresh.</td></tr>`;
+    }
+}
+
+loadCancelledOrders();
+
+</script>
+
+{% endblock %}

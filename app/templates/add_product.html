@@ -1,0 +1,179 @@
+{% extends "base_vendor.html" %}
+
+{% block title %}Add Product{% endblock %}
+
+{% block heading %}Add Product{% endblock %}
+
+{% block content %}
+
+<div class="card" style="max-width:720px; margin:0 auto;">
+
+<h2 style="margin-bottom:20px;">Add Product</h2>
+
+<form id="productForm">
+
+<label>Product Image</label><br>
+<div class="image-upload-box" id="imageUploadBox" onclick="document.getElementById('imageInput').click()">
+    <img id="imagePreview" style="display:none;">
+    <div id="imageUploadHint" class="image-upload-hint">
+        <span class="image-upload-icon">📷</span>
+        Click to select an image<br>
+        <small>JPG, PNG or WEBP — max 5MB</small>
+    </div>
+</div>
+<input type="file" id="imageInput" accept="image/png, image/jpeg, image/webp" style="display:none;">
+<br><br>
+
+<label>SKU</label><br>
+<input type="text" id="sku" required><br><br>
+
+<label>Product Name</label><br>
+<input type="text" id="name" required><br><br>
+
+<label>Description</label><br>
+<textarea id="description"></textarea><br><br>
+
+<label>Category ID</label><br>
+<input type="number" id="category_id" required><br><br>
+
+<label>Price</label><br>
+<input type="number" step="0.01" id="price" required><br><br>
+
+<label>Cost Price</label><br>
+<input type="number" step="0.01" id="cost_price"><br><br>
+
+<label>Initial Quantity</label><br>
+<input type="number" id="initial_quantity" value="0"><br><br>
+
+<label>Warehouse Location</label><br>
+<input type="text" id="warehouse_location" value="MAIN-WH"><br><br>
+
+<label>Reorder Level</label><br>
+<input type="number" id="reorder_level" value="10"><br><br>
+
+<label>Reorder Quantity</label><br>
+<input type="number" id="reorder_quantity" value="50"><br><br>
+
+<button type="submit" class="btn btn-primary">
+Add Product
+</button>
+
+</form>
+
+</div>
+
+<script>
+
+const vendorId = localStorage.getItem("vendor_id");
+
+// ---- Image selection + live preview ----
+let selectedImageFile = null;
+
+document.getElementById("imageInput").addEventListener("change", function(e){
+    const file = e.target.files[0];
+    if(!file){
+        return;
+    }
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    if(!allowedTypes.includes(file.type)){
+        alert("Only JPG, PNG, and WEBP images are allowed");
+        e.target.value = "";
+        return;
+    }
+    if(file.size > 5 * 1024 * 1024){
+        alert("Image must be smaller than 5MB");
+        e.target.value = "";
+        return;
+    }
+
+    selectedImageFile = file;
+
+    const reader = new FileReader();
+    reader.onload = function(ev){
+        const preview = document.getElementById("imagePreview");
+        preview.src = ev.target.result;
+        preview.style.display = "block";
+        document.getElementById("imageUploadHint").style.display = "none";
+    };
+    reader.readAsDataURL(file);
+});
+
+document.getElementById("productForm").addEventListener("submit", async function(e){
+
+    e.preventDefault();
+
+    const payload = {
+
+        vendor_id: Number(vendorId),
+
+        sku: document.getElementById("sku").value,
+
+        name: document.getElementById("name").value,
+
+        description: document.getElementById("description").value,
+
+        category_id: Number(document.getElementById("category_id").value),
+
+        price: Number(document.getElementById("price").value),
+
+        cost_price: document.getElementById("cost_price").value === ""
+            ? null
+            : Number(document.getElementById("cost_price").value),
+
+        initial_quantity: Number(document.getElementById("initial_quantity").value),
+
+        warehouse_location: document.getElementById("warehouse_location").value,
+
+        reorder_level: Number(document.getElementById("reorder_level").value),
+
+        reorder_quantity: Number(document.getElementById("reorder_quantity").value)
+
+    };
+
+    const response = await fetch("/products",{
+
+        method:"POST",
+
+        headers:{
+            "Content-Type":"application/json"
+        },
+
+        body:JSON.stringify(payload)
+
+    });
+
+    const data = await response.json();
+
+    if(!response.ok){
+        console.log(data);
+        alert(JSON.stringify(data, null, 2));
+        return;
+    }
+
+    // Product created — now upload the image, if one was selected
+    if(selectedImageFile){
+        const formData = new FormData();
+        formData.append("file", selectedImageFile);
+
+        const imageResponse = await fetch("/products/" + data.id + "/image", {
+            method: "POST",
+            body: formData,
+        });
+
+        if(!imageResponse.ok){
+            const imgErr = await imageResponse.json();
+            alert("Product was created, but the image upload failed: " + JSON.stringify(imgErr, null, 2));
+            window.location = "/my-products";
+            return;
+        }
+    }
+
+    alert("Product Added Successfully");
+    window.location = "/my-products";
+
+});
+
+</script>
+
+{% endblock %}

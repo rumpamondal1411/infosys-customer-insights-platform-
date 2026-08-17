@@ -1,0 +1,85 @@
+{% extends "base_vendor.html" %}
+
+{% block title %}Inventory Alerts{% endblock %}
+{% block heading %}Inventory Alerts{% endblock %}
+
+{% block content %}
+
+<div class="section-title">
+    <h3>Low Stock Alerts</h3>
+    <button onclick="loadAlerts()" class="btn btn-primary">🔄 Refresh</button>
+</div>
+
+<p id="alertsStatus" style="color:#2563eb; min-height:20px;"></p>
+
+<table border="1" width="100%" cellpadding="10">
+    <thead>
+        <tr>
+            <th>Product</th>
+            <th>SKU</th>
+            <th>Available</th>
+            <th>Reorder Level</th>
+            <th>Suggested Reorder Qty</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody id="alertsTable"></tbody>
+</table>
+
+<script>
+
+const vendorId = localStorage.getItem("vendor_id");
+
+async function loadAlerts() {
+    const statusEl = document.getElementById("alertsStatus");
+    statusEl.textContent = "Loading...";
+
+    try {
+        const response = await fetch(`/inventory/alerts/low-stock?vendor_id=${vendorId}`);
+        if (!response.ok) throw new Error(`request failed (${response.status})`);
+        const alerts = await response.json();
+
+        const tbody = document.getElementById("alertsTable");
+        if (!alerts.length) {
+            tbody.innerHTML = `<tr><td colspan="6">No products are currently below their reorder level. 🎉</td></tr>`;
+        } else {
+            tbody.innerHTML = alerts.map(a => `
+                <tr>
+                    <td>${a.product_name}</td>
+                    <td>${a.sku}</td>
+                    <td>${a.quantity_available}</td>
+                    <td>${a.reorder_level}</td>
+                    <td>${a.reorder_quantity}</td>
+                    <td>
+                        <button onclick="restock(${a.product_id}, ${a.reorder_quantity})">Restock ${a.reorder_quantity}</button>
+                    </td>
+                </tr>
+            `).join("");
+        }
+
+        statusEl.textContent = `Updated: ${new Date().toLocaleTimeString()}`;
+    } catch (err) {
+        statusEl.textContent = `Failed to load alerts: ${err.message}`;
+    }
+}
+
+async function restock(productId, quantity) {
+    const response = await fetch(`/inventory/${productId}/restock`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ quantity }),
+    });
+
+    if (response.ok) {
+        alert("Restocked successfully.");
+        loadAlerts();
+    } else {
+        alert("Restock failed.");
+    }
+}
+
+loadAlerts();
+
+</script>
+
+{% endblock %}

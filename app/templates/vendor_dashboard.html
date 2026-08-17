@@ -1,0 +1,802 @@
+{% extends "base_vendor.html" %}
+
+{% block title %}Vendor Dashboard{% endblock %}
+
+{% block heading %}Vendor Dashboard{% endblock %}
+
+{% block content %}
+
+<div class="welcome">
+
+    <div>
+
+        <h2 id="welcomeText">
+            Welcome Vendor
+        </h2>
+
+        <p>
+            Manage your products, inventory and transactions from one dashboard.
+        </p>
+
+    </div>
+
+</div>
+
+<!-- ========================= -->
+<!-- Statistics Cards -->
+<!-- ========================= -->
+
+<div class="stats">
+
+    <div class="stat-box">
+
+        <div class="stat-icon blue">
+            📦
+        </div>
+
+        <div class="stat-content">
+
+            <h4>Total Products</h4>
+
+            <h2 id="totalProducts">
+                0
+            </h2>
+
+            <p>Registered Products</p>
+
+        </div>
+
+    </div>
+
+
+    <div class="stat-box">
+
+        <div class="stat-icon green">
+            📊
+        </div>
+
+        <div class="stat-content">
+
+            <h4>Inventory</h4>
+
+            <h2 id="inventoryCount">
+                0
+            </h2>
+
+            <p>Inventory Records</p>
+
+        </div>
+
+    </div>
+
+
+    <div class="stat-box">
+
+        <div class="stat-icon orange">
+            ✔
+        </div>
+
+        <div class="stat-content">
+
+            <h4>Status</h4>
+
+            <h2 id="status">
+                Active
+            </h2>
+
+            <p>Vendor Account</p>
+
+        </div>
+
+    </div>
+
+
+    <div class="stat-box">
+
+        <div class="stat-icon purple">
+            ⭐
+        </div>
+
+        <div class="stat-content">
+
+            <h4>Verification</h4>
+
+            <h2 id="verification">
+                Verified
+            </h2>
+
+            <p>Account Status</p>
+
+        </div>
+
+    </div>
+
+
+    <a href="/vendor-cancelled-orders" class="stat-box" style="text-decoration:none; color:inherit; cursor:pointer;">
+
+        <div class="stat-icon red">
+            ✖
+        </div>
+
+        <div class="stat-content">
+
+            <h4>Cancelled Orders</h4>
+
+            <h2 id="cancelledOrders">
+                0
+            </h2>
+
+            <p>Total Cancelled — click for details</p>
+
+        </div>
+
+    </a>
+
+    <a href="/vendor-returned-orders" class="stat-box" style="text-decoration:none; color:inherit; cursor:pointer;">
+
+        <div class="stat-icon orange">
+            ↩
+        </div>
+
+        <div class="stat-content">
+
+            <h4>Returned Orders</h4>
+
+            <h2 id="returnedOrders">
+                0
+            </h2>
+
+            <p>Total Returned — click for details</p>
+
+        </div>
+
+    </a>
+
+</div>
+
+<!-- ========================= -->
+<!-- Quick Actions -->
+<!-- ========================= -->
+
+<div class="card">
+
+    <div class="card-header">
+
+        <h3>
+            Quick Actions
+        </h3>
+
+    </div>
+
+    <div class="quick-actions">
+
+        <a href="/add-product" class="action-card">
+
+            <div class="action-icon blue">
+                ➕
+            </div>
+
+            <div class="action-title">
+                Add Product
+            </div>
+
+        </a>
+
+        <a href="/my-products" class="action-card">
+
+            <div class="action-icon green">
+                📦
+            </div>
+
+            <div class="action-title">
+                Products
+            </div>
+
+        </a>
+
+        <a href="/inventory-page" class="action-card">
+
+            <div class="action-icon orange">
+                📊
+            </div>
+
+            <div class="action-title">
+                Inventory
+            </div>
+
+        </a>
+
+        <a href="/transactions-page" class="action-card">
+
+            <div class="action-icon purple">
+                💰
+            </div>
+
+            <div class="action-title">
+                Transactions
+            </div>
+
+        </a>
+        <a href="/vendor-analytics-page" class="action-card">
+            <div class="action-icon green">
+
+            </div>
+            <div class ="action-title">
+                Analytics
+            </div>
+        </a>
+
+    </div>
+
+</div>
+
+<br>
+
+<!-- ========================= -->
+<!-- Vendor Information -->
+<!-- ========================= -->
+
+<div class="card">
+
+    <div class="card-header">
+
+        <h3>
+            Vendor Information
+        </h3>
+
+    </div>
+
+    <table class="info-table">
+
+        <tr>
+
+            <td>Vendor ID</td>
+
+            <td id="vendor_id">
+                Loading...
+            </td>
+
+        </tr>
+
+        <tr>
+
+            <td>Business Name</td>
+
+            <td id="business_name">
+                Loading...
+            </td>
+
+        </tr>
+
+        <tr>
+
+            <td>Email</td>
+
+            <td id="email">
+                Loading...
+            </td>
+
+        </tr>
+
+        <tr>
+
+            <td>Category</td>
+
+            <td id="category">
+                Loading...
+            </td>
+
+        </tr>
+
+        <tr>
+
+            <td>Status</td>
+
+            <td>
+
+                <span class="badge badge-success" id="statusText">
+
+                    Loading...
+
+                </span>
+
+            </td>
+
+        </tr>
+
+        <tr>
+
+            <td>Verification</td>
+
+            <td>
+
+                <span class="badge badge-primary" id="verificationText">
+
+                    Loading...
+
+                </span>
+
+            </td>
+
+        </tr>
+
+    </table>
+
+</div>
+
+<br>
+
+<!-- ========================= -->
+<!-- Product Summary -->
+<!-- ========================= -->
+
+<div class="grid-2">
+
+    <div class="card">
+
+        <div class="card-header">
+
+            <h3>Recent Products</h3>
+
+            <a href="/my-products">View All</a>
+
+        </div>
+
+        <table class="table">
+
+            <thead>
+
+                <tr>
+
+                    <th>ID</th>
+
+                    <th></th>
+
+                    <th>Product</th>
+
+                    <th>Price</th>
+
+                    <th>Status</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody id="recentProducts">
+
+                <tr>
+
+                    <td colspan="5" style="text-align:center;">
+                        Loading...
+                    </td>
+
+                </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+
+
+    <div class="card">
+
+        <div class="card-header">
+
+            <h3>Inventory Status</h3>
+
+            <a href="/inventory-page">View All</a>
+
+        </div>
+
+        <table class="table">
+
+            <thead>
+
+                <tr>
+
+                    <th>Product</th>
+
+                    <th>Stock</th>
+
+                    <th>Reorder</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody id="inventoryTable">
+
+                <tr>
+
+                    <td colspan="3" style="text-align:center;">
+                        Loading...
+                    </td>
+
+                </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+
+
+
+
+<!-- ========================= -->
+<!-- Statistics -->
+<!-- ========================= -->
+
+<div class="grid-2">
+
+    <div class="card">
+
+        <div class="card-header">
+
+            <h3>Business Overview</h3>
+
+        </div>
+
+        <table class="info-table">
+
+            <tr>
+
+                <td>Total Products</td>
+
+                <td id="productSummary">
+
+                    Loading...
+
+                </td>
+
+            </tr>
+
+            <tr>
+
+                <td>Inventory Records</td>
+
+                <td id="inventorySummary">
+
+                    Loading...
+
+                </td>
+
+            </tr>
+
+            <tr>
+
+                <td>Vendor Status</td>
+
+                <td id="businessStatus">
+
+                    Loading...
+
+                </td>
+
+            </tr>
+
+            <tr>
+
+                <td>Verification</td>
+
+                <td id="verifyStatus">
+
+                    Loading...
+
+                </td>
+
+            </tr>
+
+        </table>
+
+    </div>
+
+
+
+    <div class="card">
+
+        <div class="card-header">
+
+            <h3>Quick Links</h3>
+
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:15px;">
+
+            <a class="btn btn-primary" href="/add-product">
+
+                ➕ Add New Product
+
+            </a>
+
+            <a class="btn btn-success" href="/inventory-page">
+
+                📦 Manage Inventory
+
+            </a>
+
+            <a class="btn btn-primary" href="/transactions-page">
+
+                💰 View Transactions
+
+            </a>
+
+        </div>
+
+    </div>
+
+</div>
+
+<br>
+
+<div class="footer">
+
+    © 2026 ShopSense Vendor Dashboard
+
+</div>
+
+<script>
+
+const vendorId = localStorage.getItem("vendor_id");
+
+if(!vendorId){
+    window.location="/login";
+}
+
+loadVendor();
+loadProducts();
+loadInventory();
+loadCancelledOrders();
+loadReturnedOrders();
+
+
+// ========================================
+// Load Vendor Details
+// ========================================
+
+async function loadVendor(){
+
+    const response = await fetch("/vendors/" + vendorId);
+
+    if(!response.ok){
+        return;
+    }
+
+    const vendor = await response.json();
+
+    document.getElementById("welcomeText").innerHTML =
+        "Welcome, " + vendor.business_name;
+
+    document.getElementById("vendor_id").innerHTML =
+        vendor.id;
+
+    document.getElementById("business_name").innerHTML =
+        vendor.business_name;
+
+    document.getElementById("email").innerHTML =
+        vendor.email;
+
+    document.getElementById("category").innerHTML =
+        vendor.primary_category;
+
+    document.getElementById("status").innerHTML =
+        vendor.status;
+
+    document.getElementById("statusText").innerHTML =
+        vendor.status;
+
+    document.getElementById("businessStatus").innerHTML =
+        vendor.status;
+
+    document.getElementById("verification").innerHTML =
+        vendor.verification_status;
+
+    document.getElementById("verificationText").innerHTML =
+        vendor.verification_status;
+
+    document.getElementById("verifyStatus").innerHTML =
+        vendor.verification_status;
+
+}
+
+
+
+// ========================================
+// Load Products
+// ========================================
+
+async function loadProducts(){
+
+    const response = await fetch("/products?vendor_id=" + vendorId);
+
+    if(!response.ok){
+        return;
+    }
+
+    const products = await response.json();
+
+    document.getElementById("totalProducts").innerHTML =
+        products.length;
+
+    document.getElementById("productSummary").innerHTML =
+        products.length;
+
+    let rows = "";
+
+    products.slice(0,5).forEach(product=>{
+
+        rows += `
+        <tr>
+
+            <td>${product.id}</td>
+
+            <td>
+                ${
+                    product.image_url
+                        ? `<img src="${product.image_url}" class="table-thumb">`
+                        : `<span class="table-thumb-placeholder">No img</span>`
+                }
+            </td>
+
+            <td>${product.name}</td>
+
+            <td>₹ ${product.price}</td>
+
+            <td>
+
+                <span class="badge badge-success">
+
+                    ${product.status}
+
+                </span>
+
+            </td>
+
+        </tr>
+        `;
+
+    });
+
+    if(products.length===0){
+
+        rows = `
+        <tr>
+
+            <td colspan="5">
+
+                No Products Available
+
+            </td>
+
+        </tr>
+        `;
+
+    }
+
+    document.getElementById("recentProducts").innerHTML =
+        rows;
+
+}
+
+
+
+// ========================================
+// Load Inventory
+// ========================================
+
+async function loadInventory(){
+
+    const response = await fetch("/inventory?vendor_id=" + vendorId);
+
+    if(!response.ok){
+        return;
+    }
+
+    const inventory = await response.json();
+
+    document.getElementById("inventoryCount").innerHTML =
+        inventory.length;
+
+    document.getElementById("inventorySummary").innerHTML =
+        inventory.length;
+
+    let rows = "";
+
+    inventory.slice(0,5).forEach(item=>{
+
+        rows += `
+        <tr>
+
+            <td>${item.product_name}</td>
+
+            <td>${item.quantity_available}</td>
+
+            <td>${item.reorder_level}</td>
+
+        </tr>
+        `;
+
+    });
+
+    if(inventory.length===0){
+
+        rows = `
+        <tr>
+
+            <td colspan="3">
+
+                Inventory Empty
+
+            </td>
+
+        </tr>
+        `;
+
+    }
+
+    document.getElementById("inventoryTable").innerHTML =
+        rows;
+
+}
+// ========================================
+// Load Cancelled Orders Count
+// ========================================
+
+async function loadCancelledOrders(){
+
+    const response = await fetch("/transactions?vendor_id=" + vendorId + "&limit=1000");
+
+    if(!response.ok){
+        return;
+    }
+
+    const transactions = await response.json();
+
+    const cancelledCount = transactions.filter(t => t.status === "cancelled").length;
+
+    document.getElementById("cancelledOrders").innerHTML =
+        cancelledCount;
+
+}
+
+// ========================================
+// Load Returned Orders Count
+// ========================================
+
+async function loadReturnedOrders(){
+
+    const response = await fetch("/transactions?vendor_id=" + vendorId + "&limit=1000");
+
+    if(!response.ok){
+        return;
+    }
+
+    const transactions = await response.json();
+
+    const returnedCount = transactions.filter(t => t.status === "refunded").length;
+
+    document.getElementById("returnedOrders").innerHTML =
+        returnedCount;
+
+}
+
+// ========================================
+// Logout
+// ========================================
+
+function logout(){
+
+    localStorage.clear();
+
+    window.location="/login";
+
+}
+
+</script>
+
+{% endblock %}

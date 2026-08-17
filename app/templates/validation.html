@@ -1,0 +1,269 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Validation{% endblock %}
+{% block heading %}Validate Analytical Outputs Against Historical Data{% endblock %}
+
+{% block content %}
+
+<div class="welcome">
+
+    <div>
+
+        <h2>Analytics Validation Center</h2>
+
+        <p>
+            Compare analytical models with historical marketplace data and
+            evaluate forecast accuracy, customer segmentation quality and
+            recommendation relevance.
+        </p>
+
+    </div>
+
+</div>
+
+
+<div class="stats">
+
+    <div class="stat-box">
+
+        <div class="stat-icon blue">
+            📈
+        </div>
+
+        <div class="stat-content">
+
+            <h4>Forecast Accuracy</h4>
+
+            <h2 id="statForecast">-</h2>
+
+            <p id="statForecastVerdict"></p>
+
+        </div>
+
+    </div>
+
+    <div class="stat-box">
+
+        <div class="stat-icon green">
+            👥
+        </div>
+
+        <div class="stat-content">
+
+            <h4>Segmentation</h4>
+
+            <h2 id="statSegmentation">-</h2>
+
+            <p id="statSegmentationVerdict"></p>
+
+        </div>
+
+    </div>
+
+    <div class="stat-box">
+
+        <div class="stat-icon orange">
+            ⭐
+        </div>
+
+        <div class="stat-content">
+
+            <h4>Recommendation</h4>
+
+            <h2 id="statRecommendation">-</h2>
+
+            <p id="statRecommendationVerdict"></p>
+
+        </div>
+
+    </div>
+
+</div>
+
+<br><br>
+
+<div class="card">
+
+<div class="card-header">
+
+<h3>Forecast Validation</h3>
+
+</div>
+
+<p>
+
+Each product forecast is generated using historical sales data and
+validated against the latest marketplace transactions.
+
+</p>
+
+<table class="table">
+
+<thead>
+
+<tr>
+
+<th>Product</th>
+
+<th>Predicted</th>
+
+<th>Actual</th>
+
+<th>Accuracy</th>
+
+</tr>
+
+</thead>
+
+<tbody id="forecastTable"></tbody>
+
+</table>
+
+</div>
+
+<br>
+
+<div class="grid-2">
+
+<div class="card">
+
+<div class="card-header">
+
+<h3>Customer Segmentation Quality</h3>
+
+</div>
+
+<div id="segmentationDetail">
+
+Loading...
+
+</div>
+
+</div>
+
+<div class="card">
+
+<div class="card-header">
+
+<h3>Recommendation Engine Validation</h3>
+
+</div>
+
+<div id="recommendationDetail">
+
+Loading...
+
+</div>
+
+</div>
+
+</div>
+
+<div class="card">
+
+<div class="card-header">
+
+<h3>Milestone 2 Validation Summary</h3>
+
+</div>
+
+<table class="analytics-table">
+
+<tr>
+
+<th>Module</th>
+
+<th>Target</th>
+
+<th>Status</th>
+
+</tr>
+
+<tr>
+
+<td>Forecast Accuracy</td>
+
+<td>≥ 80%</td>
+
+<td id="forecastStatus"></td>
+
+</tr>
+
+<tr>
+
+<td>Customer Segmentation</td>
+
+<td>≥ 85%</td>
+
+<td id="segmentStatus"></td>
+
+</tr>
+
+<tr>
+
+<td>Recommendation Engine</td>
+
+<td>≥ 75%</td>
+
+<td id="recommendStatus"></td>
+
+</tr>
+
+</table>
+
+</div>
+<script>
+
+loadReport();
+
+function verdictBadge(meets){
+    return meets
+        ? "<span style='color:#16a34a;font-weight:bold;'>✓ Meets threshold</span>"
+        : "<span style='color:#dc2626;font-weight:bold;'>✗ Below threshold</span>";
+}
+
+async function loadReport(){
+
+    const response = await fetch("/validation/report");
+    if(!response.ok){
+        alert("Unable to load validation report");
+        return;
+    }
+    const data = await response.json();
+
+    const f = data.forecast_accuracy;
+    document.getElementById("statForecast").innerText = f.overall_accuracy_pct + "%";
+    document.getElementById("statForecastVerdict").innerHTML = verdictBadge(f.meets_threshold);
+    document.getElementById("forecastStatus").innerHTML = verdictBadge(f.meets_threshold);
+    document.getElementById("forecastTable").innerHTML = (f.per_product || []).map(p => `
+        <tr>
+            <td>${p.product_id}</td>
+            <td>${p.predicted_units}</td>
+            <td>${p.actual_units}</td>
+            <td>${p.accuracy_pct}%</td>
+        </tr>
+    `).join("") || `<tr><td colspan="4">${f.note || "Not enough history yet to backtest."}</td></tr>`;
+
+    const s = data.segmentation_quality;
+    document.getElementById("statSegmentation").innerText = s.quality_pct + "%";
+    document.getElementById("statSegmentationVerdict").innerHTML = verdictBadge(s.meets_threshold);
+    document.getElementById("segmentStatus").innerHTML = verdictBadge(s.meets_threshold);
+    document.getElementById("segmentationDetail").innerHTML = s.silhouette_score !== null
+        ? `<p>Raw silhouette score: <strong>${s.silhouette_score}</strong> (range -1 to 1)
+             over ${s.customers_evaluated} customers across ${s.n_clusters} clusters.</p>`
+        : `<p>${s.note || "Not enough customers yet."}</p>`;
+
+    const r = data.recommendation_relevance;
+    document.getElementById("statRecommendation").innerText = r.relevance_pct + "%";
+    document.getElementById("statRecommendationVerdict").innerHTML = verdictBadge(r.meets_threshold);
+    document.getElementById("recommendStatus").innerHTML = verdictBadge(r.meets_threshold);
+    document.getElementById("recommendationDetail").innerHTML = r.customers_evaluated > 0
+        ? `<p>Evaluated on ${r.customers_evaluated} customers with repeat purchases —
+             exact-product hit rate: <strong>${r.exact_product_hit_rate_pct}%</strong>,
+             category hit rate: <strong>${r.category_hit_rate_pct}%</strong>.</p>`
+        : `<p>${r.note || "Not enough repeat-purchase customers yet."}</p>`;
+}
+
+</script>
+
+{% endblock %}

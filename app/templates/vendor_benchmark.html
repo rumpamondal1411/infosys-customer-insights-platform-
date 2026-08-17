@@ -1,0 +1,120 @@
+{% extends "base_vendor.html" %}
+
+{% block title %}My Benchmark{% endblock %}
+{% block heading %}My Performance vs. Marketplace{% endblock %}
+
+{% block content %}
+
+<div class="card" id="benchmarkSection">
+
+    <div class="card-header">
+        <h3>My Performance vs. Marketplace <span style="font-size:12px; color:#888;">(Milestone 3 benchmarking)</span></h3>
+    </div>
+
+    <div class="stats" id="benchmarkStats">
+        <div class="stat-box">
+            <div class="stat-content">
+                <h4>Revenue Percentile</h4>
+                <h2 id="benchRevenuePercentile">-</h2>
+                <p>Among all vendors</p>
+            </div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-content">
+                <h4>Revenue vs Avg</h4>
+                <h2 id="benchRevenueVsAvg">-</h2>
+                <p>Marketplace average</p>
+            </div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-content">
+                <h4>Orders vs Avg</h4>
+                <h2 id="benchOrdersVsAvg">-</h2>
+                <p>Marketplace average</p>
+            </div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-content">
+                <h4>Avg Order Value vs Avg</h4>
+                <h2 id="benchAovVsAvg">-</h2>
+                <p>Marketplace average</p>
+            </div>
+        </div>
+    </div>
+
+    <canvas id="vendorBenchmarkChart" height="90"></canvas>
+    <p id="benchmarkEmptyNote" style="display:none; color:#888; text-align:center;">
+        No completed transactions yet — your marketplace benchmark will appear once you make your first sale.
+    </p>
+
+</div>
+
+<script>
+
+const vendorId = localStorage.getItem("vendor_id");
+
+if(!vendorId){
+    window.location="/login";
+}
+
+loadBenchmark();
+
+let vendorBenchmarkChartInstance = null;
+
+async function loadBenchmark(){
+
+    if(!vendorId){
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/v1/benchmark/marketplace?vendor_id=${vendorId}`);
+
+        if(!response.ok){
+            document.getElementById("benchmarkEmptyNote").style.display = "block";
+            return;
+        }
+
+        const data = await response.json();
+
+        if(!data || data.length === 0){
+            document.getElementById("benchmarkEmptyNote").style.display = "block";
+            return;
+        }
+
+        const mine = data[0];
+
+        document.getElementById("benchRevenuePercentile").innerText = mine.revenue_percentile + "th";
+        document.getElementById("benchRevenueVsAvg").innerText =
+            (mine.revenue_vs_marketplace_avg_pct >= 0 ? "+" : "") + mine.revenue_vs_marketplace_avg_pct + "%";
+        document.getElementById("benchOrdersVsAvg").innerText =
+            (mine.orders_vs_marketplace_avg_pct >= 0 ? "+" : "") + mine.orders_vs_marketplace_avg_pct + "%";
+        document.getElementById("benchAovVsAvg").innerText =
+            (mine.aov_vs_marketplace_avg_pct >= 0 ? "+" : "") + mine.aov_vs_marketplace_avg_pct + "%";
+
+        if(vendorBenchmarkChartInstance) vendorBenchmarkChartInstance.destroy();
+        vendorBenchmarkChartInstance = new Chart(document.getElementById("vendorBenchmarkChart"), {
+            type: "bar",
+            data: {
+                labels: ["Revenue", "Orders", "Avg Order Value"],
+                datasets: [{
+                    label: "% vs Marketplace Average",
+                    data: [mine.revenue_vs_marketplace_avg_pct, mine.orders_vs_marketplace_avg_pct, mine.aov_vs_marketplace_avg_pct],
+                    backgroundColor: [
+                        mine.revenue_vs_marketplace_avg_pct >= 0 ? "#16a34a" : "#dc2626",
+                        mine.orders_vs_marketplace_avg_pct >= 0 ? "#16a34a" : "#dc2626",
+                        mine.aov_vs_marketplace_avg_pct >= 0 ? "#16a34a" : "#dc2626",
+                    ]
+                }]
+            }
+        });
+
+    } catch (err) {
+        document.getElementById("benchmarkEmptyNote").style.display = "block";
+    }
+
+}
+
+</script>
+
+{% endblock %}

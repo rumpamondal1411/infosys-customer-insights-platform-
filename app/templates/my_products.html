@@ -1,0 +1,120 @@
+{% extends "base_vendor.html" %}
+
+{% block title %}My Products{% endblock %}
+
+{% block heading %}My Products{% endblock %}
+
+{% block content %}
+
+<div class="section-title">
+    <h3>My Products</h3>
+    <a href="/add-product" class="btn btn-primary">+ Add Product</a>
+</div>
+
+<div class="product-grid" id="productGrid">
+    <p>Loading products...</p>
+</div>
+
+<script>
+
+function editProduct(id){
+
+    window.location = "/edit-product?id=" + id;
+
+}
+
+async function deleteProduct(id){
+
+    if(!confirm("Delete this product?")){
+        return;
+    }
+
+    const response = await fetch("/products/" + id,{
+
+        method:"DELETE"
+
+    });
+
+    if(response.ok){
+
+        alert("Product Deleted");
+
+        loadProducts();
+
+    }
+    else{
+
+        const data = await response.json();
+
+        alert(JSON.stringify(data, null, 2));
+
+
+    }
+
+}
+
+const vendorId = localStorage.getItem("vendor_id");
+
+loadProducts();
+
+function statusBadgeClass(status){
+    if(status === "active"){
+        return "badge-success";
+    }
+    if(status === "draft"){
+        return "badge-primary";
+    }
+    if(status === "discontinued"){
+        return "badge-danger";
+    }
+    return "badge-warning"; // inactive
+}
+
+async function loadProducts(){
+
+    const response = await fetch("/products?vendor_id=" + vendorId);
+
+    if(!response.ok){
+
+        alert("Unable to load products");
+
+        return;
+
+    }
+
+    const products = await response.json();
+
+    const grid = document.getElementById("productGrid");
+
+    if(products.length === 0){
+        grid.innerHTML = `<p>No products yet. <a href="/add-product">Add your first product</a>.</p>`;
+        return;
+    }
+
+    grid.innerHTML = products.map(p => `
+        <div class="product-card">
+            <div class="product-card-image">
+                ${
+                    p.image_url
+                        ? `<img src="${p.image_url}" alt="${p.name}">`
+                        : `<div class="product-card-noimage">No Image</div>`
+                }
+            </div>
+            <div class="product-card-body">
+                <div class="product-card-name" title="${p.name}">${p.name}</div>
+                <div class="product-card-sku">SKU: ${p.sku}</div>
+                <div class="product-card-price">₹ ${p.price}</div>
+                <span class="badge ${statusBadgeClass(p.status)}">${p.status}</span>
+            </div>
+            <div class="product-card-actions">
+                <button class="btn btn-primary" onclick="editProduct(${p.id})">Edit</button>
+                <button class="btn btn-danger" onclick="deleteProduct(${p.id})">Delete</button>
+            </div>
+        </div>
+    `).join("");
+
+}
+
+</script>
+
+{% endblock %}

@@ -1,0 +1,187 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Customer Analytics{% endblock %}
+{% block heading %}Customer Behaviour & Recommendation Analytics{% endblock %}
+
+{% block content %}
+
+<p>Customer segmentation (KMeans clustering on RFM + engagement), churn-risk
+    scoring, and the data behind personalized product recommendations.</p>
+
+<div class="stats-container" id="statsContainer">
+    <div class="stat-card"><h4>Total Customers</h4><p id="statTotal">-</p></div>
+    <div class="stat-card"><h4>Segments Found</h4><p id="statSegments">-</p></div>
+    <div class="stat-card"><h4>High Churn Risk</h4><p id="statHighRisk">-</p></div>
+</div>
+
+<br>
+
+<div class="chart-grid">
+
+    <div class="chart-card">
+        <h3>Customer Segments</h3>
+        <canvas id="segmentChart"></canvas>
+    </div>
+
+    <div class="chart-card">
+        <h3>Segment Profile (Avg. Spend)</h3>
+        <canvas id="segmentSpendChart"></canvas>
+    </div>
+
+</div>
+
+<br>
+
+<h3>Segment Summary</h3>
+
+<table border="1" cellpadding="10" width="100%">
+    <thead>
+        <tr>
+            <th>Segment</th>
+            <th>Customers</th>
+            <th>Avg Recency (days)</th>
+            <th>Avg Orders</th>
+            <th>Avg Spend</th>
+            <th>Avg Views</th>
+        </tr>
+    </thead>
+    <tbody id="segmentTable"></tbody>
+</table>
+
+<br>
+
+<h3>Churn Risk — Top 20</h3>
+
+<table border="1" cellpadding="10" width="100%">
+    <thead>
+        <tr>
+            <th>Customer</th>
+            <th>Email</th>
+            <th>Risk Level</th>
+            <th>Risk Score</th>
+            <th>Days Since Last Order</th>
+            <th>Avg Days Between Orders</th>
+            <th>Total Orders</th>
+        </tr>
+    </thead>
+    <tbody id="churnTable"></tbody>
+</table>
+
+<br>
+
+<h3>Preview Recommendations</h3>
+
+<label>Customer ID:</label>
+<input type="number" id="recCustomerId" placeholder="Enter Customer ID">
+<button onclick="loadRecommendations()">Get Recommendations</button>
+
+<br><br>
+
+<div class="product-grid" id="recGrid"></div>
+
+<script>
+
+loadDashboard();
+
+async function loadDashboard(){
+
+    const response = await fetch("/customer-analytics/dashboard");
+    if(!response.ok){
+        alert("Unable to load customer analytics data");
+        return;
+    }
+    const data = await response.json();
+
+    document.getElementById("statTotal").innerText = data.total_customers;
+    document.getElementById("statSegments").innerText = data.segments.n_clusters;
+    document.getElementById("statHighRisk").innerText = data.high_risk_count;
+
+    const clusters = data.segments.clusters;
+
+    new Chart(document.getElementById("segmentChart"), {
+    type: "line",
+    data: {
+        labels: clusters.map(c => c.segment),
+        datasets: [{
+            label: "Customers",
+            data: clusters.map(c => c.customer_count),
+            borderColor: "#2563eb",
+            backgroundColor: "rgba(37, 99, 235, 0.15)",
+            fill: true,
+            tension: 0.3,
+            pointBackgroundColor: "#2563eb",
+            pointRadius: 5
+        }]
+    }
+});
+
+    new Chart(document.getElementById("segmentSpendChart"), {
+        type: "bar",
+        data: {
+            labels: clusters.map(c => c.segment),
+            datasets: [{
+                label: "Avg Spend",
+                data: clusters.map(c => c.avg_monetary),
+                backgroundColor: "#2563eb"
+            }]
+        }
+    });
+
+    document.getElementById("segmentTable").innerHTML = clusters.map(c => `
+        <tr>
+            <td>${c.segment}</td>
+            <td>${c.customer_count}</td>
+            <td>${c.avg_recency_days}</td>
+            <td>${c.avg_frequency}</td>
+            <td>₹ ${c.avg_monetary}</td>
+            <td>${c.avg_views}</td>
+        </tr>
+    `).join("") || "<tr><td colspan='6'>No customers yet</td></tr>";
+
+    document.getElementById("churnTable").innerHTML = data.churn_risk.map(c => `
+        <tr>
+            <td>${c.name}</td>
+            <td>${c.email}</td>
+            <td>${c.risk_level}</td>
+            <td>${c.risk_score}</td>
+            <td>${c.days_since_last_purchase ?? "-"}</td>
+            <td>${c.avg_days_between_purchases ?? "-"}</td>
+            <td>${c.total_orders}</td>
+        </tr>
+    `).join("") || "<tr><td colspan='7'>No customers yet</td></tr>";
+}
+
+async function loadRecommendations(){
+    const id = document.getElementById("recCustomerId").value;
+    if(!id){ alert("Enter a customer ID"); return; }
+
+    const response = await fetch(`/customer-analytics/recommendations/${id}`);
+    if(!response.ok){
+        alert("Unable to load recommendations");
+        return;
+    }
+    const data = await response.json();
+    const grid = document.getElementById("recGrid");
+
+    if(!data.recommendations || data.recommendations.length === 0){
+        grid.innerHTML = "<p>No recommendations available yet.</p>";
+        return;
+    }
+
+    grid.innerHTML = data.recommendations.map(p => `
+        <div class="product-card">
+            <div class="product-card-image">
+                ${p.image_url ? `<img src="${p.image_url}" alt="${p.name}">` : `<div class="product-card-noimage">No Image</div>`}
+            </div>
+            <div class="product-card-body">
+                <div class="product-card-name" title="${p.name}">${p.name}</div>
+                <div class="product-card-sku">${p.reason}</div>
+                <div class="product-card-price">₹ ${p.price}</div>
+            </div>
+        </div>
+    `).join("");
+}
+
+</script>
+
+{% endblock %}

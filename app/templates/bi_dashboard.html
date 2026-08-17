@@ -1,0 +1,183 @@
+
+{% extends "base_admin.html" %}
+
+{% block title %}BI Dashboard{% endblock %}
+{% block heading %}Business Intelligence Dashboard{% endblock %}
+
+{% block content %}
+
+<h2>Business Intelligence Dashboard <span style="font-size:14px; color:#888;">(Milestone 3 prototype)</span></h2>
+
+<div style="display:flex; gap:10px; flex-wrap:wrap; margin:16px 0;">
+    <button onclick="runEtl()">⚙️ Run ETL Pipeline</button>
+    <button onclick="trainModel()">🧠 Retrain Segmentation Model</button>
+    <button onclick="runScheduledReport()">📅 Generate Scheduled Report</button>
+    <select id="exportSection" style="padding:8px;">
+        <option value="revenue_by_vendor">Revenue by Vendor</option>
+        <option value="revenue_by_category">Revenue by Category</option>
+        <option value="top_products">Top Products</option>
+        <option value="vendor_performance">Vendor Performance</option>
+        <option value="inventory_turnover">Inventory Turnover</option>
+        <option value="marketplace_benchmark">Marketplace Benchmark</option>
+        <option value="profit_margins">Profit Margins</option>
+    </select>
+    <button onclick="exportReport('csv')">⬇️ Export CSV</button>
+    <button onclick="exportReport('xlsx')">⬇️ Export Excel</button>
+</div>
+<p id="controlStatus" style="color:#2563eb; min-height:20px;"></p>
+
+<hr>
+
+<div class="chart-grid">
+    <div class="chart-card">
+        <h3>Revenue Trend (Daily)</h3>
+        <canvas id="revenueTrendChart"></canvas>
+    </div>
+    <div class="chart-card">
+        <h3>Vendor Leaderboard — Revenue vs Marketplace Avg</h3>
+        <canvas id="benchmarkChart"></canvas>
+    </div>
+</div>
+<br>
+<div class="chart-grid">
+    <div class="chart-card">
+        <h3>Customer Segments</h3>
+        <canvas id="segmentsChart"></canvas>
+    </div>
+    <div class="chart-card">
+        <h3>Inventory Turnover (Top 10)</h3>
+        <canvas id="turnoverChart"></canvas>
+    </div>
+</div>
+
+<br><hr>
+<h3>Recent ETL Pipeline Runs</h3>
+<table border="1" width="100%" cellpadding="8">
+    <thead>
+        <tr><th>ID</th><th>Triggered By</th><th>Status</th><th>Started</th><th>Rows Loaded</th></tr>
+    </thead>
+    <tbody id="etlRunsTable"></tbody>
+</table>
+
+<script>
+
+async function loadRevenueTrend(){
+    const res = await fetch("/revenue-intelligence/by-time?granularity=daily");
+    if(!res.ok) return;
+    const data = await res.json();
+    new Chart(document.getElementById("revenueTrendChart"), {
+        type: "line",
+        data: {
+            labels: data.map(d => d.transaction_date),
+            datasets: [{ label: "Revenue", data: data.map(d => d.total_revenue), borderColor: "#2563eb", tension: 0.3 }]
+        }
+    });
+}
+
+async function loadBenchmark(){
+    const res = await fetch("/api/v1/benchmark/marketplace");
+    if(!res.ok) return;
+    const data = await res.json();
+    new Chart(document.getElementById("benchmarkChart"), {
+        type: "bar",
+        data: {
+            labels: data.map(d => "Vendor #" + d.vendor_id),
+            datasets: [{ label: "Revenue vs Marketplace Avg (%)", data: data.map(d => d.revenue_vs_marketplace_avg_pct), backgroundColor: "#16a34a" }]
+        }
+    });
+}
+
+async function loadSegments(){
+    const res = await fetch("/customer-analytics/segments");
+    if(!res.ok) return;
+    const data = await res.json();
+    const clusters = data.clusters || [];
+    new Chart(document.getElementById("segmentsChart"), {
+        type: "pie",
+        data: {
+            labels: clusters.map(c => c.segment),
+            datasets: [{ data: clusters.map(c => c.customer_count), backgroundColor: ["#2563eb","#16a34a","#b45309","#dc2626","#9333ea"] }]
+        }
+    });
+}
+
+async function loadTurnover(){
+    const res = await fetch("/analytics/inventory-turnover");
+    if(!res.ok) return;
+    let data = await res.json();
+    data = data.slice(0, 10);
+    new Chart(document.getElementById("turnoverChart"), {
+        type: "bar",
+        data: {
+            labels: data.map(d => d.product_name || ("#" + d.product_id)),
+            datasets: [{ label: "Turnover Ratio", data: data.map(d => d.turnover_ratio ?? d.turnover ?? 0), backgroundColor: "#ea580c" }]
+        }
+    });
+}
+
+async function loadEtlRuns(){
+    const res = await fetch("/api/v1/etl/runs?limit=10");
+    if(!res.ok) return;
+    const runs = await res.json();
+    document.getElementById("etlRunsTable").innerHTML = runs.map(r => `
+        <tr>
+            <td>${r.id}</td>
+            <td>${r.triggered_by}</td>
+            <td>${r.status}</td>
+            <td>${new Date(r.started_at).toLocaleString()}</td>
+            <td>${r.rows_loaded}</td>
+        </tr>
+    `).join("") || "<tr><td colspan='5'>No pipeline runs yet — click 'Run ETL Pipeline' above.</td></tr>";
+}
+
+async function runEtl(){
+    document.getElementById("controlStatus").innerText = "Running ETL pipeline…";
+    try {
+        const res = await fetch("/api/v1/etl/run", { method: "POST" });
+        const data = await res.json();
+        document.getElementById("controlStatus").innerText = res.ok
+            ? `ETL run #${data.run_id} completed — ${data.rows_loaded} rows loaded.`
+            : `ETL run failed: ${data.detail || "unknown error"}`;
+        loadEtlRuns();
+    } catch (e) {
+        document.getElementById("controlStatus").innerText = "ETL run failed — see console for details.";
+    }
+}
+
+async function trainModel(){
+    document.getElementById("controlStatus").innerText = "Training segmentation model…";
+    try {
+        const res = await fetch("/api/v1/ml/segmentation/train", { method: "POST" });
+        const data = await res.json();
+        document.getElementById("controlStatus").innerText = res.ok
+            ? `Model trained — ${data.customers_segmented} customers segmented (MLflow run ${data.mlflow_run_id}).`
+            : `Training skipped: ${data.detail || "unknown reason"}`;
+        loadSegments();
+    } catch (e) {
+        document.getElementById("controlStatus").innerText = "Training failed — see console for details.";
+    }
+}
+
+async function runScheduledReport(){
+    document.getElementById("controlStatus").innerText = "Generating scheduled report…";
+    const res = await fetch("/api/v1/reports/scheduled/run", { method: "POST" });
+    const data = await res.json();
+    document.getElementById("controlStatus").innerText = res.ok
+        ? "Scheduled report generated and saved to /reports."
+        : "Report generation failed.";
+}
+
+function exportReport(fmt){
+    const section = document.getElementById("exportSection").value;
+    window.open(`/api/v1/reports/export?section=${section}&fmt=${fmt}`, "_blank");
+}
+
+loadRevenueTrend();
+loadBenchmark();
+loadSegments();
+loadTurnover();
+loadEtlRuns();
+
+</script>
+
+{% endblock %}

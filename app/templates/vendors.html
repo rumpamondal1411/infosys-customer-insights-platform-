@@ -1,0 +1,204 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Vendor Management{% endblock %}
+
+{% block heading %}Vendor Management{% endblock %}
+
+{% block content %}
+
+<table border="1" cellpadding="10" width="100%">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Business Name</th>
+            <th>Email</th>
+            <th>Status</th>
+            <th>Verification</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+
+    <tbody id="vendorTable">
+    </tbody>
+
+</table>
+
+<script>
+
+if(localStorage.getItem("admin") != "true"){
+
+    alert("Admin Login Required");
+
+    window.location="/admin-login";
+
+}
+
+loadVendors();
+
+async function loadVendors(){
+
+    const response = await fetch("/vendors");
+
+    const vendors = await response.json();
+
+    let rows = "";
+
+    vendors.forEach(v => {
+
+        rows += `
+        <tr>
+
+        <td>${v.id}</td>
+
+        <td>${v.business_name}</td>
+
+        <td>${v.email}</td>
+
+        <td>${v.status}</td>
+
+        <td>${v.verification_status}</td>
+
+        <td>
+
+        <button onclick="approveVendor(${v.id})">Approve</button>
+
+        <button onclick="rejectVendor(${v.id})">Reject</button>
+
+        <button onclick="suspendVendor(${v.id})">Suspend</button>
+
+        <button onclick="reactivateVendor(${v.id})">Reactivate</button>
+
+        </td>
+
+        </tr>
+        `;
+
+    });
+
+    document.getElementById("vendorTable").innerHTML = rows;
+
+}
+async function approveVendor(id){
+
+    const response = await fetch("/vendors/" + id + "/approve",{
+
+        method:"PATCH",
+
+        headers:{
+            "Content-Type":"application/json"
+        },
+
+        body:JSON.stringify({
+            reason:"Approved by Admin"
+        })
+
+    });
+
+    if(response.ok){
+
+        alert("Vendor Approved");
+
+        loadVendors();
+
+    }else{
+
+        alert("Approval Failed");
+
+    }
+
+}
+
+async function rejectVendor(id){
+
+    const response = await fetch("/vendors/" + id + "/reject",{
+
+        method:"PATCH",
+
+        headers:{
+            "Content-Type":"application/json"
+        },
+
+        body:JSON.stringify({
+            reason:"Rejected by Admin"
+        })
+
+    });
+
+    if(response.ok){
+
+        alert("Vendor Rejected");
+
+        loadVendors();
+
+    }else{
+
+        alert("Reject Failed");
+
+    }
+
+}
+
+async function suspendVendor(id){
+
+    const response = await fetch("/vendors/" + id + "/suspend",{
+
+        method:"PATCH",
+
+        headers:{
+            "Content-Type":"application/json"
+        },
+
+        body:JSON.stringify({
+            reason:"Suspended by Admin"
+        })
+
+    });
+
+    if(response.ok){
+
+        alert("Vendor Suspended");
+
+        loadVendors();
+
+    }else{
+
+        alert("Suspend Failed");
+
+    }
+
+}
+
+async function reactivateVendor(id){
+
+    const response = await fetch("/vendors/" + id + "/reactivate",{
+
+        method:"PATCH"
+
+    });
+
+    if(response.ok){
+
+        alert("Vendor Reactivated");
+
+        loadVendors();
+
+    }else{
+
+        alert("Reactivate Failed");
+
+    }
+
+}
+function logout(){
+
+    localStorage.removeItem("admin");
+
+    alert("Admin Logged Out");
+
+    window.location="/admin-login";
+
+}
+
+</script>
+
+{% endblock %}

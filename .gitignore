@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Database
+data/*.db
+*.db
+
+# Generated reports
+reports/**/*.csv
+reports/**/*.json
+reports/**/*.xlsx
+
+# MLflow
+mlruns/
+mlflow.db
+
+# Testing
+.pytest_cache/
+
+# Virtual environment
+venv/
+.venv/
+
+# Python package files
+*.egg-info/
+
+# Generated customer data
+app/utils/_added_customer_batches.json

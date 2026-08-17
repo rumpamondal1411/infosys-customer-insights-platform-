@@ -1,0 +1,287 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block heading %}Admin Dashboard{% endblock %}
+
+{% block content %}
+
+<h1>Welcome to ShopSense 👋</h1>
+
+<p>Monitor and manage your marketplace from one dashboard.</p>
+
+<br>
+
+<div class="stats-container">
+
+    <div class="stat-card">
+        <h4>Total Revenue</h4>
+        <p id="totalRevenue">0</p>
+    </div>
+
+    <div class="stat-card">
+        <h4>Total Orders</h4>
+        <p id="totalOrders">0</p>
+    </div>
+
+    <div class="stat-card">
+        <h4>Total Products</h4>
+        <p id="totalProducts">0</p>
+    </div>
+
+    <div class="stat-card">
+        <h4>Total Vendors</h4>
+        <p id="totalVendors">0</p>
+    </div>
+
+</div>
+
+<br>
+
+<h2>Quick Actions</h2>
+
+<div class="stats-container">
+
+    <a href="/vendors-page" class="dashboard-btn">Vendors</a>
+
+    <a href="/categories-page" class="dashboard-btn">Categories</a>
+
+    <a href="/analytics-page" class="dashboard-btn">Analytics</a>
+
+    <a href="/reports-page" class="dashboard-btn">Reports</a>
+
+</div>
+
+<br>
+
+<br>
+<h2>Pending Vendor Approvals</h2>
+
+<table border="1" width="100%" cellpadding="10">
+
+<thead>
+
+<tr>
+
+<th>Business Name</th>
+<th>Email</th>
+<th>Applied On</th>
+<th>Action</th>
+
+</tr>
+
+</thead>
+
+<tbody id="pendingVendorsTable">
+
+</tbody>
+
+</table>
+
+<br>
+
+<h2>Low Stock Products</h2>
+
+<table border="1" width="100%" cellpadding="10">
+
+<thead>
+
+<tr>
+
+<th>Product</th>
+<th>Available</th>
+<th>Reorder Level</th>
+
+</tr>
+
+</thead>
+
+<tbody id="lowStockTable">
+
+</tbody>
+
+</table>
+
+<br>
+
+<h2>Recent Transactions</h2>
+
+<table border="1" width="100%" cellpadding="10">
+
+<thead>
+
+<tr>
+
+<th>ID</th>
+<th>Product</th>
+<th>Quantity</th>
+<th>Total</th>
+<th>Status</th>
+
+</tr>
+
+</thead>
+
+<tbody id="transactionTable">
+
+</tbody>
+
+</table>
+
+<script>
+
+loadStats();
+loadPendingVendors();
+loadLowStock();
+loadTransactions();
+
+
+async function loadStats(){
+
+    const response=await fetch("/analytics/dashboard-stats");
+
+    const data=await response.json();
+
+    document.getElementById("totalRevenue").innerHTML="₹ "+(data.total_revenue ?? data.total_sales ?? 0);
+
+    document.getElementById("totalOrders").innerHTML=data.total_orders ?? data.total_transactions ?? 0;
+
+    document.getElementById("totalProducts").innerHTML=data.total_products ?? 0;
+
+    document.getElementById("totalVendors").innerHTML=data.total_vendors ?? 0;
+
+}
+
+async function loadPendingVendors(){
+
+    const response = await fetch("/vendors?status=pending");
+
+    const vendors = await response.json();
+
+    let rows = "";
+
+    vendors.forEach(v => {
+
+        rows += `
+        <tr>
+            <td>${v.business_name}</td>
+            <td>${v.email}</td>
+            <td>${new Date(v.onboarded_at).toLocaleDateString()}</td>
+            <td>
+                <button onclick="approveVendor(${v.id})">Approve</button>
+                <button onclick="rejectVendor(${v.id})">Reject</button>
+            </td>
+        </tr>
+        `;
+
+    });
+
+    document.getElementById("pendingVendorsTable").innerHTML =
+        rows || `<tr><td colspan="4">No pending vendor applications</td></tr>`;
+
+}
+
+async function approveVendor(id){
+
+    const response = await fetch("/vendors/" + id + "/approve", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: "Approved by Admin" })
+    });
+
+    if(response.ok){
+        alert("Vendor Approved");
+        loadPendingVendors();
+        loadStats();
+    } else {
+        alert("Approval Failed");
+    }
+
+}
+
+async function rejectVendor(id){
+
+    const response = await fetch("/vendors/" + id + "/reject", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: "Rejected by Admin" })
+    });
+
+    if(response.ok){
+        alert("Vendor Rejected");
+        loadPendingVendors();
+    } else {
+        alert("Reject Failed");
+    }
+
+}
+
+async function loadLowStock(){
+
+    const response=await fetch("/analytics/low-stock");
+
+    const data=await response.json();
+
+    let rows="";
+
+    data.forEach(item=>{
+
+        rows+=`
+
+        <tr>
+
+        <td>${item.product_name}</td>
+
+        <td>${item.quantity_available}</td>
+
+        <td>${item.reorder_level}</td>
+
+        </tr>
+
+        `;
+
+    });
+
+    document.getElementById("lowStockTable").innerHTML=rows;
+
+}
+
+async function loadTransactions(){
+
+    const response=await fetch("/analytics/recent-transactions");
+
+    const data=await response.json();
+
+    let rows="";
+
+    data.forEach(item=>{
+
+        rows+=`
+
+        <tr>
+
+        <td>${item.id}</td>
+
+        <td>${item.product_id}</td>
+
+        <td>${item.quantity}</td>
+
+        <td>₹ ${item.total_amount}</td>
+
+        <td>${item.status}</td>
+
+        </tr>
+
+        `;
+
+    });
+
+    document.getElementById("transactionTable").innerHTML=rows;
+
+}
+
+
+   
+</script>
+
+{% endblock %}

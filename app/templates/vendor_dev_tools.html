@@ -1,0 +1,71 @@
+{% extends "base_vendor.html" %}
+
+{% block title %}Developer Tools{% endblock %}
+{% block heading %}Developer Tools{% endblock %}
+
+{% block content %}
+
+<div class="section-title">
+    <h3>REST API Simulator</h3>
+</div>
+
+<p style="color:#555;">
+    Try any ShopSense API endpoint against your own vendor account and see the raw JSON response.
+    Full interactive API reference (all endpoints, request/response schemas): 
+    <a href="/docs" target="_blank">/docs</a>.
+</p>
+
+<div style="background:#f3f4f6; border-radius:8px; padding:12px; margin:12px 0; font-family:monospace; font-size:14px;">
+    Your Vendor ID (used as <code>{vendor_id}</code> below): <strong id="vendorIdDisplay"></strong>
+</div>
+
+<div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:14px;">
+
+    <select id="endpointSelect" style="padding:8px; min-width:280px;">
+        <option value="GET /vendors/{vendor_id}">GET  My vendor profile</option>
+        <option value="GET /inventory/vendor/{vendor_id}">GET  My inventory</option>
+        <option value="GET /inventory/alerts/low-stock?vendor_id={vendor_id}">GET  My low-stock alerts</option>
+        <option value="GET /analytics/vendor-performance">GET  Vendor performance (marketplace-wide)</option>
+        <option value="GET /api/v1/benchmark/marketplace?vendor_id={vendor_id}">GET  My marketplace benchmark</option>
+        <option value="GET /transactions?vendor_id={vendor_id}">GET  My transactions</option>
+    </select>
+
+    <button onclick="runSimulator()" class="btn btn-primary">▶ Run Request</button>
+
+</div>
+
+<p id="simStatus" style="color:#2563eb; min-height:20px;"></p>
+
+<pre id="simOutput" style="background:#111827; color:#d1fae5; padding:16px; border-radius:8px; min-height:180px; overflow:auto; font-size:13px;">Response will appear here...</pre>
+
+<script>
+
+const vendorId = localStorage.getItem("vendor_id");
+document.getElementById("vendorIdDisplay").textContent = vendorId;
+
+async function runSimulator() {
+    const raw = document.getElementById("endpointSelect").value;
+    const [method, path] = raw.split(/\s+/, 2);
+    const url = path.replace("{vendor_id}", vendorId);
+
+    const statusEl = document.getElementById("simStatus");
+    const outputEl = document.getElementById("simOutput");
+    statusEl.textContent = `Sending ${method} ${url} ...`;
+    outputEl.textContent = "";
+
+    try {
+        const start = performance.now();
+        const response = await fetch(url, { method });
+        const elapsed = Math.round(performance.now() - start);
+        const body = await response.json().catch(() => null);
+
+        statusEl.textContent = `${method} ${url} → ${response.status} (${elapsed}ms)`;
+        outputEl.textContent = JSON.stringify(body, null, 2);
+    } catch (err) {
+        statusEl.textContent = `Request failed: ${err.message}`;
+    }
+}
+
+</script>
+
+{% endblock %}

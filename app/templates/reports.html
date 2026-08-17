@@ -1,0 +1,99 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Reports{% endblock %}
+{% block heading %}Marketplace Reports{% endblock %}
+
+{% block content %}
+
+<div class="chart-card">
+
+    <h3>Baseline Marketplace Report</h3>
+
+    <p>Generates revenue and product performance metrics across the whole marketplace, and saves a copy to the <code>reports/</code> folder (JSON + CSV).</p>
+
+    <button onclick="generateReport()">
+        📄 Generate Report
+    </button>
+
+</div>
+
+<br>
+
+<div id="reportOutput"></div>
+
+<script>
+
+async function generateReport(){
+
+    const output = document.getElementById("reportOutput");
+
+    output.innerHTML = "<p>Generating...</p>";
+
+    const response = await fetch("/analytics/reports/baseline", {
+        method: "POST"
+    });
+
+    if(!response.ok){
+        output.innerHTML = "<p>Failed to generate report.</p>";
+        return;
+    }
+
+    const data = await response.json();
+    const s = data.summary;
+
+    let vendorRows = data.revenue_by_vendor.map(v => `
+        <tr>
+            <td>${v.business_name}</td>
+            <td>₹ ${v.total_revenue}</td>
+            <td>${v.total_orders}</td>
+        </tr>
+    `).join("");
+
+    let productRows = data.top_products.map(p => `
+        <tr>
+            <td>${p.product_name}</td>
+            <td>${p.business_name}</td>
+            <td>₹ ${p.total_revenue}</td>
+        </tr>
+    `).join("");
+
+    output.innerHTML = `
+        <h3>Summary</h3>
+
+        <div class="stats-container">
+            <div class="stat-card">
+                <h4>Total Revenue</h4>
+                <p>₹ ${s.total_revenue}</p>
+            </div>
+            <div class="stat-card">
+                <h4>Total Orders</h4>
+                <p>${s.total_orders}</p>
+            </div>
+            <div class="stat-card">
+                <h4>Units Sold</h4>
+                <p>${s.total_units_sold}</p>
+            </div>
+        </div>
+
+        <br>
+
+        <h3>Revenue by Vendor</h3>
+        <table class="analytics-table">
+            <thead><tr><th>Vendor</th><th>Revenue</th><th>Orders</th></tr></thead>
+            <tbody>${vendorRows}</tbody>
+        </table>
+
+        <br>
+
+        <h3>Top Products</h3>
+        <table class="analytics-table">
+            <thead><tr><th>Product</th><th>Vendor</th><th>Revenue</th></tr></thead>
+            <tbody>${productRows}</tbody>
+        </table>
+    `;
+
+}
+
+</script>
+
+{% endblock %}

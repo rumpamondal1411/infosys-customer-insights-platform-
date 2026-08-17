@@ -1,0 +1,176 @@
+{% extends "base_vendor.html" %}
+
+{% block title %}Edit Product{% endblock %}
+
+{% block heading %}Edit Product{% endblock %}
+
+{% block content %}
+
+<div class="card" style="max-width:720px; margin:0 auto;">
+
+<h2 style="margin-bottom:20px;">Edit Product</h2>
+
+<form id="editForm">
+
+<label>Product Image</label><br>
+<div class="image-upload-box" id="imageUploadBox" onclick="document.getElementById('imageInput').click()">
+    <img id="imagePreview" style="display:none;">
+    <div id="imageUploadHint" class="image-upload-hint">
+        <span class="image-upload-icon">📷</span>
+        Click to select an image<br>
+        <small>JPG, PNG or WEBP — max 5MB</small>
+    </div>
+</div>
+<input type="file" id="imageInput" accept="image/png, image/jpeg, image/webp" style="display:none;">
+<br><br>
+
+<label>Product Name</label><br>
+<input type="text" id="name"><br><br>
+
+<label>Description</label><br>
+<textarea id="description"></textarea><br><br>
+
+<label>Category ID</label><br>
+<input type="number" id="category_id"><br><br>
+
+<label>Price</label><br>
+<input type="number" step="0.01" id="price"><br><br>
+
+<label>Cost Price</label><br>
+<input type="number" step="0.01" id="cost_price"><br><br>
+
+<label>Status</label><br>
+<select id="status">
+    <option value="active">Active</option>
+    <option value="inactive">Inactive</option>
+    <option value="draft">Draft</option>
+    <option value="discontinued">Discontinued</option>
+</select>
+
+<br><br>
+
+<button type="submit" class="btn btn-primary">
+Update Product
+</button>
+
+</form>
+
+</div>
+
+<script>
+
+const params = new URLSearchParams(window.location.search);
+const productId = params.get("id");
+let selectedImageFile = null;
+
+loadProduct();
+
+async function loadProduct(){
+
+    const response = await fetch("/products/" + productId);
+
+    const p = await response.json();
+
+    name.value = p.name;
+    description.value = p.description || "";
+    category_id.value = p.category_id || "";
+    price.value = p.price;
+    cost_price.value = p.cost_price || "";
+    status.value = p.status;
+
+    if(p.image_url){
+        const preview = document.getElementById("imagePreview");
+        preview.src = p.image_url;
+        preview.style.display = "block";
+        document.getElementById("imageUploadHint").style.display = "none";
+    }
+
+}
+
+document.getElementById("imageInput").addEventListener("change", function(e){
+    const file = e.target.files[0];
+    if(!file){
+        return;
+    }
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    if(!allowedTypes.includes(file.type)){
+        alert("Only JPG, PNG, and WEBP images are allowed");
+        e.target.value = "";
+        return;
+    }
+    if(file.size > 5 * 1024 * 1024){
+        alert("Image must be smaller than 5MB");
+        e.target.value = "";
+        return;
+    }
+
+    selectedImageFile = file;
+
+    const reader = new FileReader();
+    reader.onload = function(ev){
+        const preview = document.getElementById("imagePreview");
+        preview.src = ev.target.result;
+        preview.style.display = "block";
+        document.getElementById("imageUploadHint").style.display = "none";
+    };
+    reader.readAsDataURL(file);
+});
+
+document.getElementById("editForm").addEventListener("submit", async function(e){
+
+e.preventDefault();
+
+const response = await fetch("/products/" + productId,{
+
+method:"PUT",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify({
+
+name:name.value,
+description:description.value,
+category_id: category_id.value === "" ? null : Number(category_id.value),
+price:Number(price.value),
+cost_price: cost_price.value === "" ? null : Number(cost_price.value),
+status:status.value
+
+})
+
+});
+
+if(!response.ok){
+    alert("Update Failed");
+    return;
+}
+
+// Product fields updated — now replace the image, if a new one was selected
+if(selectedImageFile){
+    const formData = new FormData();
+    formData.append("file", selectedImageFile);
+
+    const imageResponse = await fetch("/products/" + productId + "/image", {
+        method: "POST",
+        body: formData,
+    });
+
+    if(!imageResponse.ok){
+        const imgErr = await imageResponse.json();
+        alert("Product was updated, but the image upload failed: " + JSON.stringify(imgErr, null, 2));
+        window.location = "/my-products";
+        return;
+    }
+}
+
+alert("Product Updated Successfully");
+
+window.location="/my-products";
+
+});
+
+</script>
+
+{% endblock %}

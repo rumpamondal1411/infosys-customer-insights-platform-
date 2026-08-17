@@ -1,0 +1,1 @@
+"""ShopSense application package."""

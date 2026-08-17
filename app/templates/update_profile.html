@@ -1,0 +1,129 @@
+{% extends "base_vendor.html" %}
+
+{% block title %}Update Vendor Profile{% endblock %}
+
+{% block heading %}Update Vendor Profile{% endblock %}
+
+{% block content %}
+
+<h2>Update Profile</h2>
+
+<form id="updateForm">
+
+<label>Business Name</label><br>
+<input type="text" id="business_name"><br><br>
+
+<label>Legal Entity Name</label><br>
+<input type="text" id="legal_entity_name"><br><br>
+
+<label>Primary Category</label><br>
+<input type="text" id="primary_category"><br><br>
+
+<label>Contact Person</label><br>
+<input type="text" id="contact_person"><br><br>
+
+<label>Phone</label><br>
+<input type="text" id="phone"><br><br>
+
+<label>Address</label><br>
+<textarea id="address"></textarea><br><br>
+
+<label>Country</label><br>
+<input type="text" id="country"><br><br>
+
+<label>Commission Rate</label><br>
+<input type="number" step="0.01" id="commission_rate"><br><br>
+
+<button type="submit">
+Update Profile
+</button>
+
+<br><br>
+
+<button type="button" onclick="submitVerification()">
+Submit for Verification
+</button>
+
+</form>
+
+<script>
+
+const vendorId = prompt("Enter Vendor ID");
+
+fetch("/vendors/" + vendorId)
+.then(r => r.json())
+.then(v => {
+
+business_name.value = v.business_name;
+legal_entity_name.value = v.legal_entity_name;
+primary_category.value = v.primary_category;
+contact_person.value = v.contact_person;
+phone.value = v.phone;
+address.value = v.address;
+country.value = v.country;
+commission_rate.value = v.commission_rate;
+
+});
+
+document.getElementById("updateForm").addEventListener("submit", async function(e){
+
+e.preventDefault();
+
+const response = await fetch("/vendors/" + vendorId,{
+
+method:"PUT",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify({
+
+business_name:business_name.value,
+legal_entity_name:legal_entity_name.value,
+primary_category:primary_category.value,
+contact_person:contact_person.value,
+phone:phone.value,
+address:address.value,
+country:country.value,
+commission_rate:Number(commission_rate.value)
+
+})
+
+});
+
+if(response.ok){
+
+alert("Profile Updated Successfully");
+
+}
+else{
+
+alert("Update Failed");
+
+}
+
+});
+async function submitVerification(){
+
+    const response = await fetch(
+        "/vendors/" + vendorId + "/submit-for-verification",
+        {
+            method:"POST"
+        }
+    );
+
+    if(response.ok){
+
+        alert("Verification Request Submitted Successfully");
+
+    }else{
+
+        alert("Verification Failed");
+
+    }
+
+}
+</script>
+
+{% endblock %}

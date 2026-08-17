@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Vendor Registration</title>
+
+    <style>
+        body{
+            font-family:Arial;
+            background:#f5f5f5;
+        }
+
+        .container{
+            width:500px;
+            margin:30px auto;
+            background:white;
+            padding:30px;
+            border-radius:10px;
+            box-shadow:0 0 10px gray;
+        }
+
+        h2{
+            text-align:center;
+        }
+
+        input{
+            width:100%;
+            padding:10px;
+            margin-top:10px;
+        }
+
+        button{
+            width:100%;
+            margin-top:20px;
+            padding:12px;
+            background:#28a745;
+            color:white;
+            border:none;
+            cursor:pointer;
+        }
+
+        button:hover{
+            background:#218838;
+        }
+    </style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>Vendor Registration</h2>
+
+<form id="registerForm">
+
+<input id="business_name" placeholder="Business Name" required>
+
+<input id="legal_entity_name" placeholder="Legal Entity Name">
+
+<input id="tax_id" placeholder="GST Number">
+
+<input id="primary_category" placeholder="Category">
+
+<input id="contact_person" placeholder="Contact Person">
+
+<input id="email" type="email" placeholder="Email">
+
+<input id="password" type="password" placeholder="Password">
+
+<input id="phone" placeholder="Phone">
+
+<input id="address" placeholder="Address">
+
+<input id="country" placeholder="Country">
+
+<input id="commission_rate" value="0.1">
+
+<button type="submit">
+Register Vendor
+</button>
+
+</form>
+
+<br>
+
+<center>
+
+<a href="/login">
+Already have an account?
+
+Login Here
+
+</a>
+
+</center>
+
+</div>
+
+<script>
+
+document.getElementById("registerForm").addEventListener("submit",async function(e){
+
+e.preventDefault();
+
+const body={
+
+business_name:business_name.value,
+
+legal_entity_name:legal_entity_name.value,
+
+tax_id:tax_id.value,
+
+primary_category:primary_category.value,
+
+contact_person:contact_person.value,
+
+email:email.value,
+
+password:password.value,
+
+phone:phone.value,
+
+address:address.value,
+
+country:country.value,
+
+commission_rate:Number(commission_rate.value)
+
+};
+
+const response=await fetch("/vendors/register",{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify(body)
+
+});
+
+const data=await response.json();
+
+if(response.ok){
+
+alert("Registration Successful.\nWait for Admin Approval.");
+
+window.location="/login";
+
+}
+
+else{
+
+alert(JSON.stringify(data));
+
+}
+
+});
+
+</script>
+
+</body>
+</html>

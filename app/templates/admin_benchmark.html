@@ -1,0 +1,102 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Marketplace Benchmarking{% endblock %}
+{% block heading %}Marketplace Benchmarking{% endblock %}
+
+{% block content %}
+
+<h2 id="benchmarkingSection">Marketplace Benchmarking <span style="font-size:14px; color:#888;">(vendor revenue vs. marketplace average)</span></h2>
+
+<canvas id="benchmarkChart" height="90"></canvas>
+
+<br>
+
+<table border="1" width="100%" cellpadding="10">
+
+<thead>
+
+<tr>
+
+<th>Vendor</th>
+<th>Total Revenue</th>
+<th>Revenue Percentile</th>
+<th>Vs. Marketplace Avg</th>
+<th>Avg Order Value</th>
+
+</tr>
+
+</thead>
+
+<tbody id="benchmarkTable">
+
+</tbody>
+
+</table>
+
+<script>
+
+loadBenchmark();
+
+let benchmarkChartInstance = null;
+
+async function loadBenchmark(){
+
+    try {
+        const [benchRes, vendorsRes] = await Promise.all([
+            fetch("/api/v1/benchmark/marketplace"),
+            fetch("/vendors")
+        ]);
+
+        if(!benchRes.ok){
+            document.getElementById("benchmarkTable").innerHTML =
+                "<tr><td colspan='5'>No benchmarking data yet — run the ETL pipeline once transactions exist.</td></tr>";
+            return;
+        }
+
+        const data = await benchRes.json();
+        const vendors = vendorsRes.ok ? await vendorsRes.json() : [];
+        const nameById = {};
+        vendors.forEach(v => nameById[v.id] = v.business_name);
+
+        if(!data || data.length === 0){
+            document.getElementById("benchmarkTable").innerHTML =
+                "<tr><td colspan='5'>No completed transactions yet — benchmarking will appear once vendors start selling.</td></tr>";
+            return;
+        }
+
+        const top = data.slice(0, 10);
+
+        new Chart(document.getElementById("benchmarkChart"), {
+            type: "bar",
+            data: {
+                labels: top.map(d => nameById[d.vendor_id] || ("Vendor #" + d.vendor_id)),
+                datasets: [{
+                    label: "Revenue vs Marketplace Avg (%)",
+                    data: top.map(d => d.revenue_vs_marketplace_avg_pct),
+                    backgroundColor: top.map(d => d.revenue_vs_marketplace_avg_pct >= 0 ? "#16a34a" : "#dc2626")
+                }]
+            }
+        });
+
+        document.getElementById("benchmarkTable").innerHTML = top.map(d => `
+            <tr>
+                <td>${nameById[d.vendor_id] || ("Vendor #" + d.vendor_id)}</td>
+                <td>₹ ${d.total_revenue.toLocaleString()}</td>
+                <td>${d.revenue_percentile}th percentile</td>
+                <td style="color:${d.revenue_vs_marketplace_avg_pct >= 0 ? '#16a34a' : '#dc2626'};">
+                    ${d.revenue_vs_marketplace_avg_pct >= 0 ? "+" : ""}${d.revenue_vs_marketplace_avg_pct}%
+                </td>
+                <td>₹ ${d.avg_order_value}</td>
+            </tr>
+        `).join("");
+
+    } catch (err) {
+        document.getElementById("benchmarkTable").innerHTML =
+            "<tr><td colspan='5'>Unable to load benchmarking data right now.</td></tr>";
+    }
+
+}
+
+</script>
+
+{% endblock %}

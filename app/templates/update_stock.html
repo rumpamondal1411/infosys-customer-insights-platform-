@@ -1,0 +1,94 @@
+{% extends "base_vendor.html" %}
+
+{% block title %}Update Stock{% endblock %}
+
+{% block heading %}Update Inventory{% endblock %}
+
+{% block content %}
+
+<h2>Update Stock</h2>
+
+<form id="stockForm">
+
+<label>Available Quantity</label><br>
+<input type="number" id="quantity_available" required><br><br>
+
+<label>Warehouse Location</label><br>
+<input type="text" id="warehouse_location"><br><br>
+
+<label>Reorder Level</label><br>
+<input type="number" id="reorder_level"><br><br>
+
+<label>Reorder Quantity</label><br>
+<input type="number" id="reorder_quantity"><br><br>
+
+<button type="submit">
+Update Inventory
+</button>
+
+</form>
+
+<script>
+
+const productId = new URLSearchParams(window.location.search).get("product_id");
+
+loadInventory();
+
+async function loadInventory(){
+
+    const response = await fetch("/inventory/" + productId);
+
+    const data = await response.json();
+
+    document.getElementById("quantity_available").value = data.quantity_available;
+    document.getElementById("warehouse_location").value = data.warehouse_location;
+    document.getElementById("reorder_level").value = data.reorder_level;
+    document.getElementById("reorder_quantity").value = data.reorder_quantity;
+
+}
+
+document.getElementById("stockForm").addEventListener("submit", async function(e){
+
+    e.preventDefault();
+
+    const response = await fetch("/inventory/" + productId,{
+
+        method:"PUT",
+
+        headers:{
+            "Content-Type":"application/json"
+        },
+
+        body:JSON.stringify({
+
+            quantity_available:Number(document.getElementById("quantity_available").value),
+
+            warehouse_location:document.getElementById("warehouse_location").value,
+
+            reorder_level:Number(document.getElementById("reorder_level").value),
+
+            reorder_quantity:Number(document.getElementById("reorder_quantity").value)
+
+        })
+
+    });
+
+    if(response.ok){
+
+        alert("Inventory Updated Successfully");
+
+        window.location="/inventory-page";
+
+    }else{
+
+        const data = await response.json();
+
+        alert(JSON.stringify(data,null,2));
+
+    }
+
+});
+
+</script>
+
+{% endblock %}

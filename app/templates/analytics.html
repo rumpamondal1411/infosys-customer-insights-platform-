@@ -1,0 +1,380 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Analytics Dashboard{% endblock %}
+
+{% block heading %}Analytics Dashboard{% endblock %}
+
+{% block content %}
+
+<h2>Analytics Dashboard</h2>
+<div class="analytics-menu">
+
+    <a href="#vendorChart">Revenue by Vendor</a>
+
+    <a href="#categoryChart">Revenue by Category</a>
+
+    <a href="#topProducts">Top Products</a>
+
+    <a href="#vendorPerformance">Vendor Performance</a>
+
+    <a href="#inventoryTurnover">Inventory Turnover</a>
+
+    <a href="#consistencyCheck">Consistency</a>
+
+    
+
+</div>
+
+<br>
+<div style="margin-bottom:20px;">
+
+<button onclick="generateReport()">
+    📄 Generate Baseline Report
+</button>
+
+</div>
+
+<hr>
+
+<br>
+
+<div class="chart-grid">
+
+    <div class="chart-card">
+        <h3 id="vendorChart">Revenue by Vendor</h3>
+        <canvas id="vendorRevenueChart"></canvas>
+    </div>
+
+    <div class="chart-card">
+        <h3 id="categoryChart">Revenue by Category</h3>
+        <canvas id="categoryRevenueChart"></canvas>
+    </div>
+
+</div>
+<br>
+
+<h3 id="topProducts">Top Selling Products</h3>
+
+<div style="width:700px; height:350px; margin:auto;">
+    <canvas id="topProductsChart"></canvas>
+</div>
+
+<br>
+
+<h3 id="vendorPerformance">Vendor Performance</h3>
+
+<table border="1" cellpadding="10" width="100%">
+    <thead>
+        <tr>
+            <th>Vendor</th>
+            <th>Total Revenue</th>
+            <th>Total Orders</th>
+            <th>Units Sold</th>
+            <th>Active Products</th>
+            <th>Average Order Value</th>
+        </tr>
+    </thead>
+
+    <tbody id="vendorPerformanceTable">
+
+    </tbody>
+</table>
+
+<br>
+
+<h3 id="inventoryTurnover">Inventory Turnover</h3>
+
+<table border="1" cellpadding="10" width="100%">
+    <thead>
+        <tr>
+            <th>Product</th>
+            <th>SKU</th>
+            <th>Units Sold</th>
+            <th>Current Stock</th>
+            <th>Turnover Ratio</th>
+        </tr>
+    </thead>
+
+    <tbody id="inventoryTurnoverTable">
+
+    </tbody>
+</table>
+<br>
+
+<h3 id="consistencyCheck">Transaction Consistency Check</h3>
+
+<table border="1" cellpadding="10" width="100%">
+    <tr>
+        <th>Total Revenue</th>
+        <td id="totalRevenueCheck">Loading...</td>
+    </tr>
+
+    <tr>
+        <th>Vendor Rollup Total</th>
+        <td id="vendorTotal">Loading...</td>
+    </tr>
+
+    <tr>
+        <th>Category Rollup Total</th>
+        <td id="categoryTotal">Loading...</td>
+    </tr>
+
+    <tr>
+        <th>Overall Consistency</th>
+        <td id="overallConsistency">Loading...</td>
+    </tr>
+
+    <tr>
+        <th>Threshold</th>
+        <td id="threshold">Loading...</td>
+    </tr>
+
+    <tr>
+        <th>Status</th>
+        <td id="status">Loading...</td>
+    </tr>
+</table>
+
+<br>
+
+
+
+<script>
+
+loadVendorRevenueChart();
+loadCategoryRevenueChart();
+loadTopProductsChart();
+loadVendorPerformance();
+loadInventoryTurnover();
+loadConsistencyCheck();
+
+async function loadVendorRevenueChart(){
+
+    const response = await fetch("/analytics/revenue-by-vendor");
+
+    if(!response.ok){
+        alert("Unable to load revenue data");
+        return;
+    }
+
+    const data = await response.json();
+
+    console.log(data);
+
+    const labels = data.map(item => item.business_name);
+    const revenue = data.map(item => item.total_revenue);
+
+    const ctx = document.getElementById("vendorRevenueChart").getContext("2d");
+
+    new Chart(ctx, {
+
+        type: "bar",
+
+        data: {
+
+            labels: labels,
+
+            datasets: [{
+                label: "Revenue",
+                data: revenue
+            }]
+
+        },
+        options:{
+             responsive:true,
+             maintainAspectRatio:false,
+             plugins:{
+                legend:{
+                     display:true
+                    }
+                }
+            }
+        });
+
+}
+async function loadCategoryRevenueChart(){
+
+    const response = await fetch("/analytics/revenue-by-category");
+
+    if(!response.ok){
+        return;
+    }
+
+    const data = await response.json();
+
+    const labels = data.map(item => item.category_name);
+    const revenue = data.map(item => item.total_revenue);
+
+    new Chart(document.getElementById("categoryRevenueChart"),{
+
+        type:"pie",
+
+        data:{
+            labels:labels,
+            datasets:[{
+                data:revenue
+            }]
+        },
+
+       options:{
+        responsive:true,
+        maintainAspectRatio:false,
+        plugins:{
+            legend:{
+                position:"bottom"
+            }
+        }
+    }
+});
+
+}
+async function loadTopProductsChart(){
+
+    const response = await fetch("/analytics/top-products");
+
+    if(!response.ok){
+        return;
+    }
+
+    const data = await response.json();
+
+    const labels = data.map(item => item.product_name);
+    const revenue = data.map(item => item.total_revenue);
+
+    new Chart(document.getElementById("topProductsChart"),{
+
+        type:"bar",
+
+        data:{
+            labels:labels,
+            datasets:[{
+                label:"Revenue",
+                data:revenue
+            }]
+        },
+
+        options:{
+            responsive:true,
+            maintainAspectRatio:false,
+            plugins:{
+                legend:{
+                    display:true
+                }
+            }
+        }
+
+    });
+
+}
+async function loadVendorPerformance(){
+
+    const response = await fetch("/analytics/vendor-performance");
+
+    if(!response.ok){
+        return;
+    }
+
+    const vendors = await response.json();
+    console.log(vendors);
+
+    let rows = "";
+
+    vendors.forEach(item => {
+
+        rows += `
+        <tr>
+            <td>${item.business_name}</td>
+            <td>${item.total_revenue}</td>
+            <td>${item.total_orders}</td>
+            <td>${item.total_units_sold}</td>
+            <td>${item.active_products}</td>
+            <td>${item.average_order_value}</td>
+        </tr>
+        `;
+
+    });
+
+    document.getElementById("vendorPerformanceTable").innerHTML = rows;
+
+}
+async function loadInventoryTurnover(){
+
+    const response = await fetch("/analytics/inventory-turnover");
+
+    if(!response.ok){
+        return;
+    }
+
+    const products = await response.json();
+
+    let rows = "";
+
+    products.forEach(item => {
+
+        rows += `
+        <tr>
+            <td>${item.product_name}</td>
+            <td>${item.sku}</td>
+            <td>${item.units_sold}</td>
+            <td>${item.current_stock}</td>
+            <td>${item.turnover_ratio ?? "-"}</td>
+        </tr>
+        `;
+
+    });
+
+    document.getElementById("inventoryTurnoverTable").innerHTML = rows;
+
+}
+async function loadConsistencyCheck(){
+
+    const response = await fetch("/analytics/consistency-check");
+
+    if(!response.ok){
+        return;
+    }
+
+    const data = await response.json();
+
+    document.getElementById("totalRevenueCheck").innerText =
+        data.total_revenue;
+
+    document.getElementById("vendorTotal").innerText =
+        data.vendor_rollup_total;
+
+    document.getElementById("categoryTotal").innerText =
+        data.category_rollup_total;
+
+    document.getElementById("overallConsistency").innerText =
+        data.overall_consistency_pct + "%";
+
+    document.getElementById("threshold").innerText =
+        data.threshold_pct + "%";
+
+    document.getElementById("status").innerHTML =
+        data.meets_threshold
+            ? "<span style='color:green;font-weight:bold;'>PASS ✅</span>"
+            : "<span style='color:red;font-weight:bold;'>FAIL ❌</span>";
+
+}
+
+
+    
+async function generateReport(){
+
+    const response = await fetch(
+        "/analytics/reports/baseline",
+        {
+            method:"POST"
+        }
+    );
+
+    const data = await response.json();
+
+    alert("Baseline report generated successfully.");
+
+    console.log(data);
+
+}
+</script>
+{% endblock %}

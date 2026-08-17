@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ShopSense Vendor{% endblock %}</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/professional-theme.css') }}">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+<script>
+if(!localStorage.getItem("vendor_id")){
+    window.location="/login";
+}
+</script>
+
+<div class="sidebar">
+
+    <div class="logo">
+        <h2>ShopSense</h2>
+        <span>Vendor Panel</span>
+    </div>
+
+    <ul class="menu">
+
+        <li>
+            <a href="/vendor-dashboard">
+                <i class="fa-solid fa-house"></i>
+                <span>Dashboard</span>
+            </a>
+        </li>
+
+        <li>
+            <a href="/add-product">
+                <i class="fa-solid fa-plus"></i>
+                <span>Add Product</span>
+            </a>
+        </li>
+
+        <li>
+            <a href="/my-products">
+                <i class="fa-solid fa-box"></i>
+                <span>My Products</span>
+            </a>
+        </li>
+
+        <li>
+            <a href="/inventory-page">
+                <i class="fa-solid fa-warehouse"></i>
+                <span>Inventory</span>
+            </a>
+        </li>
+
+        <li>
+            <a href="/transactions-page">
+                <i class="fa-solid fa-money-bill-transfer"></i>
+                <span>Transactions</span>
+            </a>
+        </li>
+
+        <li>
+            <a href="/vendor-analytics-page">
+                <i class="fa-solid fa-chart-pie"></i>
+                <span>Analytics</span>
+            </a>
+        </li>
+
+        <li>
+            <a href="/vendor-benchmark-page">
+                <i class="fa-solid fa-scale-balanced"></i>
+                <span>Benchmark</span>
+            </a>
+        </li>
+        <li>
+            <a href="/change-password">
+                <i class="fa-solid fa-key"></i>
+                <span>Change Password</span>
+            </a>
+        </li>
+        <li>
+            <a href="/vendor-settings">
+                <i class="fa-solid fa-gear"></i>
+                <span>Settings</span>
+            </a>
+        </li>
+
+        <li>
+            <a href="/vendor-inventory-alerts">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <span>Inventory Alerts</span>
+            </a>
+        </li>
+
+        <li>
+            <a href="/vendor-dev-tools">
+                <i class="fa-solid fa-code"></i>
+                <span>Developer Tools</span>
+            </a>
+        </li>
+        <li>
+            <a href="/vendor-cancelled-orders">
+                <i class="fa-solid fa-ban"></i>
+                <span>Cancelled Orders</span>
+            </a>
+        </li>
+        <li>
+            <a href="/vendor-returned-orders">
+                <i class="fa-solid fa-rotate-left"></i>
+                <span>Returned Orders</span>
+            </a>
+        </li>
+
+
+    </ul>
+
+    <div class="sidebar-footer">
+
+        <button class="logout-btn-side" onclick="logout()">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            Logout
+        </button>
+
+    </div>
+
+</div>
+
+<div class="main">
+
+    <div class="topbar">
+
+        <h2>{% block heading %}Vendor Dashboard{% endblock %}</h2>
+
+    </div>
+
+    <div class="content">
+
+        {% block content %}
+        {% endblock %}
+
+    </div>
+
+</div>
+
+<script>
+function logout(){
+    localStorage.removeItem("vendor_id");
+    localStorage.removeItem("business_name");
+    window.location="/login";
+}
+</script>
+
+</body>
+</html>

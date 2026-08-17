@@ -1,0 +1,142 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Revenue Intelligence{% endblock %}
+{% block heading %}Sales Analytics & Revenue Intelligence{% endblock %}
+
+{% block content %}
+
+<p>Real-time GMV, revenue growth, margins, refunds, and campaign performance
+    aggregated from orders, payments, refunds, and promotions.</p>
+
+<div class="stats-container" id="statsContainer">
+    <div class="stat-card"><h4>GMV</h4><p id="statGmv">-</p></div>
+    <div class="stat-card"><h4>Revenue</h4><p id="statRevenue">-</p></div>
+    <div class="stat-card"><h4>Average Order Value</h4><p id="statAov">-</p></div>
+    <div class="stat-card"><h4>Revenue Growth</h4><p id="statGrowth">-</p></div>
+    <div class="stat-card"><h4>Refund Rate</h4><p id="statRefundRate">-</p></div>
+</div>
+
+<br>
+
+<div class="chart-grid">
+
+    <div class="chart-card">
+        <h3>Revenue by Region</h3>
+        <canvas id="regionChart"></canvas>
+    </div>
+
+    <div class="chart-card">
+        <h3>Daily Revenue Trend</h3>
+        <canvas id="trendChart"></canvas>
+    </div>
+
+</div>
+
+<br>
+
+<h3>Top Products by Profit Margin</h3>
+
+<table border="1" cellpadding="10" width="100%">
+    <thead>
+        <tr>
+            <th>Product</th>
+            <th>Revenue</th>
+            <th>Cost</th>
+            <th>Profit</th>
+            <th>Margin %</th>
+            <th>Units Sold</th>
+        </tr>
+    </thead>
+    <tbody id="marginTable"></tbody>
+</table>
+
+<br>
+
+<h3>Promotional Campaign Performance</h3>
+
+<table border="1" cellpadding="10" width="100%">
+    <thead>
+        <tr>
+            <th>Code</th>
+            <th>Orders</th>
+            <th>Units Sold</th>
+            <th>Revenue</th>
+            <th>Total Discount Given</th>
+        </tr>
+    </thead>
+    <tbody id="promoTable"></tbody>
+</table>
+
+<script>
+
+loadDashboard();
+
+async function loadDashboard(){
+
+    const response = await fetch("/revenue-intelligence/dashboard?period_days=30");
+    if(!response.ok){
+        alert("Unable to load revenue intelligence data");
+        return;
+    }
+    const data = await response.json();
+
+    const g = data.gmv_and_growth;
+    document.getElementById("statGmv").innerText = "₹ " + g.gmv.toLocaleString();
+    document.getElementById("statRevenue").innerText = "₹ " + g.revenue.toLocaleString();
+    document.getElementById("statAov").innerText = "₹ " + g.average_order_value.toLocaleString();
+    document.getElementById("statGrowth").innerText = g.revenue_growth_pct + "%";
+    document.getElementById("statRefundRate").innerText = data.refunds.refund_rate_pct + "%";
+
+    // Region chart
+    new Chart(document.getElementById("regionChart"), {
+        type: "bar",
+        data: {
+            labels: data.sales_by_region.map(r => r.region),
+            datasets: [{
+                label: "Revenue",
+                data: data.sales_by_region.map(r => r.total_revenue),
+                backgroundColor: "#2563eb"
+            }]
+        }
+    });
+
+    // Trend chart
+    new Chart(document.getElementById("trendChart"), {
+        type: "line",
+        data: {
+            labels: data.sales_by_time.map(r => r.transaction_date),
+            datasets: [{
+                label: "Daily Revenue",
+                data: data.sales_by_time.map(r => r.total_revenue),
+                borderColor: "#16a34a",
+                fill: false,
+                tension: 0.3
+            }]
+        }
+    });
+
+    document.getElementById("marginTable").innerHTML = data.top_margin_products.map(p => `
+        <tr>
+            <td>${p.product_name}</td>
+            <td>₹ ${p.revenue}</td>
+            <td>₹ ${p.cost_total}</td>
+            <td>₹ ${p.profit}</td>
+            <td>${p.margin_pct}%</td>
+            <td>${p.units_sold}</td>
+        </tr>
+    `).join("") || "<tr><td colspan='6'>No data yet</td></tr>";
+
+    document.getElementById("promoTable").innerHTML = data.promotion_performance.map(p => `
+        <tr>
+            <td>${p.code}</td>
+            <td>${p.orders}</td>
+            <td>${p.units_sold}</td>
+            <td>₹ ${p.revenue}</td>
+            <td>₹ ${p.total_discount_given}</td>
+        </tr>
+    `).join("") || "<tr><td colspan='5'>No promotions used yet</td></tr>";
+}
+
+</script>
+
+{% endblock %}

@@ -1,0 +1,124 @@
+{% extends "base_vendor.html" %}
+
+{% block title %}Inventory{% endblock %}
+
+{% block heading %}Inventory Management{% endblock %}
+
+{% block content %}
+
+<h2>Inventory</h2>
+
+<table border="1" cellpadding="10" width="100%">
+
+<thead>
+
+<tr>
+
+<th>Product ID</th>
+<th>Product Name</th>
+<th>Available Stock</th>
+<th>Warehouse</th>
+<th>Reorder Level</th>
+<th>Actions</th>
+
+</tr>
+
+</thead>
+
+<tbody id="inventoryTable">
+
+</tbody>
+
+</table>
+
+<script>
+
+const vendorId = localStorage.getItem("vendor_id");
+
+loadInventory();
+
+async function loadInventory(){
+
+    const response = await fetch("/inventory?vendor_id=" + vendorId);
+
+    if(!response.ok){
+        alert("Unable to load inventory");
+        return;
+    }
+
+    const inventory = await response.json();
+
+    let rows = "";
+
+    inventory.forEach(item=>{
+
+        rows += `
+        <tr>
+
+        <td>${item.product_id}</td>
+
+        <td>${item.product_name}</td>
+
+        <td>${item.quantity_available}</td>
+
+        <td>${item.warehouse_location}</td>
+
+        <td>${item.reorder_level}</td>
+
+        <td>
+
+        <button onclick="restock(${item.product_id})">
+        Restock
+        </button>
+
+        </td>
+
+        </tr>
+        `;
+
+    });
+
+    document.getElementById("inventoryTable").innerHTML = rows;
+
+}
+
+async function restock(productId){
+
+    const qty = prompt("Enter quantity to add");
+
+    if(qty == null || qty == ""){
+        return;
+    }
+
+    const response = await fetch("/inventory/" + productId + "/restock",{
+
+        method:"POST",
+
+        headers:{
+            "Content-Type":"application/json"
+        },
+
+        body:JSON.stringify({
+            quantity:Number(qty)
+        })
+
+    });
+
+    const data = await response.json();
+
+    if(response.ok){
+
+        alert("Stock Updated Successfully");
+
+        loadInventory();
+
+    }else{
+
+        alert(JSON.stringify(data,null,2));
+
+    }
+
+}
+
+</script>
+{% endblock %}

@@ -1,0 +1,1060 @@
+
+{% extends "base_customer.html" %}
+
+{% block title %}Browse Products{% endblock %}
+{% block heading %}Browse Products{% endblock %}
+
+{% block content %}
+
+<style>
+.cd-hero{ position: relative; }
+.cd-profile-badge{
+    position: absolute;
+    top: 20px;
+    right: 24px;
+    cursor: pointer;
+    z-index: 5;
+}
+.cd-profile-avatar{
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #fff;
+    color: #2874f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 18px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.25);
+    border: 2px solid #ff9f00;
+}
+.cd-profile-avatar:hover{ transform: scale(1.05); }
+.cd-profile-link{
+    background:#f0f4ff;
+    color:#1a1a1a;
+    text-align:left;
+    padding:12px 16px;
+    border-radius:8px;
+    font-weight:600;
+}
+.cd-profile-link:hover{ background:#e2eaff; }
+.cd-hero{
+    background: linear-gradient(120deg, #2874f0 0%, #1a5fd0 60%, #ff9f00 160%);
+    border-radius: 16px;
+    padding: 34px 30px;
+    color: #fff;
+    margin-bottom: 26px;
+}
+.cd-hero h2{ color:#fff; font-size:26px; margin:0 0 6px; }
+.cd-hero p{ color:rgba(255,255,255,0.9); margin:0 0 18px; }
+
+.cd-search-box{
+    max-width: 620px;
+    display: flex;
+    background: #fff;
+    border-radius: 999px;
+    overflow: hidden;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+}
+.cd-search-box input{
+    flex: 1;
+    border: none !important;
+    padding: 14px 20px !important;
+    font-size: 15px;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+}
+.cd-search-box input:focus{ box-shadow:none !important; }
+.cd-search-box button{
+    border-radius: 0 !important;
+    padding: 0 26px !important;
+    background: #ff9f00;
+    font-size: 15px;
+}
+.cd-search-box button:hover{ background:#e88900; }
+
+.cd-actions{
+    margin-top: 20px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.cd-action-btn{
+    border: none;
+    border-radius: 999px;
+    padding: 11px 20px;
+    font-weight: 600;
+    font-size: 14px;
+    color: #fff;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+}
+.cd-action-cart{ background:#ff9f00; }
+.cd-action-cart:hover{ background:#e88900; }
+.cd-action-orders{ background:#1a5fd0; }
+.cd-action-orders:hover{ background:#134fb0; }
+.cd-action-wishlist{ background:#e84393; }
+.cd-action-wishlist:hover{ background:#d13383; }
+.cd-action-address{ background:#0f9d8b; }
+.cd-action-address:hover{ background:#0c8375; }
+
+.cd-section-title{
+    text-align: center;
+    font-size: 22px;
+    font-weight: 700;
+    color: #0f1b2b;
+    margin: 6px 0 20px;
+}
+
+.cd-category-grid{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 190px));
+    gap: 24px;
+    justify-content: center;
+    padding: 6px 0 10px;
+}
+.cd-category-grid .category-box{ padding: 26px 16px; }
+.cd-category-grid .category-box-icon{
+    width: 70px;
+    height: 70px;
+    font-size: 26px;
+}
+.cd-category-grid .category-box-name{ font-size: 16px; }
+</style>
+
+<div class="cd-hero">
+    <div class="cd-profile-badge" onclick="openProfile()" title="My Profile">
+    <div class="cd-profile-avatar" id="profileAvatar">U</div>
+</div>
+
+    <h2 id="welcomeText">Welcome</h2>
+    <p>Search, browse, and buy products from all vendors on ShopSense.</p>
+
+    <div class="cd-search-box">
+        <input type="text" id="searchInput" placeholder="Search for products, brands, and more...">
+        <button onclick="onSearch()">Search</button>
+    </div>
+
+    <div class="cd-actions">
+        <button class="cd-action-btn cd-action-cart" onclick="openCart()">🛒 Cart (<span id="cartCount">0</span>)</button>
+        <button class="cd-action-btn cd-action-orders" onclick="openOrders()">📦 My Orders</button>
+        <button class="cd-action-btn cd-action-wishlist" onclick="openWishlist()">❤️ Wishlist (<span id="wishlistCount">0</span>)</button>
+        <button class="cd-action-btn cd-action-address" onclick="openAddress()">📍 My Address</button>
+        <button class="cd-action-btn" onclick="openSpending()">💳 My Spending</button>
+    </div>
+</div>
+
+<div id="recommendationsSection">
+    <h3>Recommended for You</h3>
+    <div class="product-grid" id="recGrid"><p>Loading recommendations...</p></div>
+</div>
+
+<br>
+
+<h3 class="cd-section-title">Shop by Category</h3>
+<div class="category-grid cd-category-grid" id="categoryStrip">
+    <p style="grid-column:1/-1; text-align:center; color:#888;">Loading categories…</p>
+</div>
+
+<br>
+
+<h3 id="resultsHeading">All Products</h3>
+<div class="product-grid" id="productGrid">
+    <p>Loading products...</p>
+</div>
+<!-- Profile modal -->
+<div id="profileModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:50;">
+    <div style="background:white; max-width:600px; margin:50px auto; border-radius:12px; padding:0; max-height:85vh; overflow-y:auto;">
+
+        <div style="background:linear-gradient(120deg,#2874f0,#1a5fd0); padding:28px 24px; border-radius:12px 12px 0 0; color:#fff; display:flex; align-items:center; gap:16px;">
+            <div id="profileModalAvatar" style="width:64px; height:64px; border-radius:50%; background:#fff; color:#2874f0; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:26px;">U</div>
+            <div>
+                <div id="profileModalName" style="font-size:20px; font-weight:700;">-</div>
+                <div id="profileModalEmail" style="font-size:13px; opacity:.9;">-</div>
+            </div>
+        </div>
+
+        <div style="padding:24px;">
+            <div class="stats-container">
+                <div class="stat-card"><h4>Total Orders</h4><p id="profileOrderCount">-</p></div>
+                <div class="stat-card"><h4>Total Spent</h4><p id="profileTotalSpent">-</p></div>
+                <div class="stat-card"><h4>Wishlist Items</h4><p id="profileWishlistCount">-</p></div>
+            </div>
+
+            <br>
+            <h4>Personal Details</h4>
+            <div id="profileDetailsBox" style="background:#f7f8fa; border-radius:8px; padding:14px; font-size:14px; line-height:1.8;">
+                Loading...
+            </div>
+
+            <br>
+            <h4>Quick Links</h4>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <button class="btn cd-profile-link" onclick="closeProfile(); openOrders();">📦 Order History</button>
+                <button class="btn cd-profile-link" onclick="closeProfile(); openWishlist();">❤️ My Wishlist</button>
+                <button class="btn cd-profile-link" onclick="closeProfile(); openAddress();">📍 Manage Address</button>
+                <button class="btn cd-profile-link" onclick="closeProfile(); openSpending();">💳 Spending Analysis</button>
+                <button class="btn btn-danger" onclick="logoutCustomer()">🚪 Logout</button>
+            </div>
+        </div>
+
+        <div style="padding:0 24px 24px;">
+            <button class="btn btn-danger" onclick="closeProfile()" style="width:100%;">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Cart modal -->
+<div id="cartModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:50;">
+    <div style="background:white; max-width:520px; margin:60px auto; border-radius:12px; padding:24px; max-height:80vh; overflow-y:auto;">
+        <h3>Your Cart</h3>
+        <div id="cartItems"></div>
+        <p><strong>Total: ₹ <span id="cartTotal">0</span></strong></p>
+        <input type="text" id="promoCodeInput" placeholder="Promo code (optional)" style="width:100%; padding:8px; margin-bottom:10px;">
+
+        <p><strong>Payment Method</strong></p>
+        <div class="payment-methods" id="paymentMethods">
+            <label class="payment-option selected" data-value="cod">
+                <input type="radio" name="paymentMethod" value="cod" checked onchange="highlightPaymentOption(this)">
+                <i class="fa-solid fa-money-bill-wave"></i> Cash on Delivery
+            </label>
+            <label class="payment-option" data-value="upi">
+                <input type="radio" name="paymentMethod" value="upi" onchange="highlightPaymentOption(this)">
+                <i class="fa-solid fa-qrcode"></i> UPI
+            </label>
+            <label class="payment-option" data-value="net_banking">
+                <input type="radio" name="paymentMethod" value="net_banking" onchange="highlightPaymentOption(this)">
+                <i class="fa-solid fa-building-columns"></i> Net Banking
+            </label>
+        </div>
+
+        <div style="display:flex; gap:10px;">
+            <button class="btn btn-cta" onclick="checkout()">Place Order</button>
+            <button class="btn btn-danger" onclick="closeCart()">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Buy Now modal -->
+<div id="buyNowModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:50;">
+    <div style="background:white; max-width:520px; margin:60px auto; border-radius:12px; padding:24px; max-height:80vh; overflow-y:auto;">
+        <h3>Confirm Your Order</h3>
+        <div id="buyNowSummary" style="padding:10px 0; border-bottom:1px solid #eee; margin-bottom:10px;"></div>
+
+        <p><strong>Payment Method</strong></p>
+        <div class="payment-methods" id="buyNowPaymentMethods">
+            <label class="payment-option selected" data-value="cod">
+                <input type="radio" name="buyNowPaymentMethod" value="cod" checked onchange="highlightBuyNowPaymentOption(this)">
+                <i class="fa-solid fa-money-bill-wave"></i> Cash on Delivery
+            </label>
+            <label class="payment-option" data-value="upi">
+                <input type="radio" name="buyNowPaymentMethod" value="upi" onchange="highlightBuyNowPaymentOption(this)">
+                <i class="fa-solid fa-qrcode"></i> UPI
+            </label>
+            <label class="payment-option" data-value="net_banking">
+                <input type="radio" name="buyNowPaymentMethod" value="net_banking" onchange="highlightBuyNowPaymentOption(this)">
+                <i class="fa-solid fa-building-columns"></i> Net Banking
+            </label>
+        </div>
+
+        <div style="display:flex; gap:10px;">
+            <button class="btn btn-cta" onclick="confirmBuyNow()">Place Order</button>
+            <button class="btn btn-danger" onclick="closeBuyNow()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Orders modal -->
+<div id="ordersModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:50;">
+    <div style="background:white; max-width:600px; margin:60px auto; border-radius:12px; padding:24px; max-height:80vh; overflow-y:auto;">
+        <h3>My Orders</h3>
+        <div id="ordersList"></div>
+        <button class="btn btn-danger" onclick="closeOrders()">Close</button>
+    </div>
+</div>
+
+<!-- Wishlist modal -->
+<div id="wishlistModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:50;">
+    <div style="background:white; max-width:700px; margin:60px auto; border-radius:12px; padding:24px; max-height:80vh; overflow-y:auto;">
+        <h3>Your Wishlist</h3>
+        <div class="product-grid" id="wishlistGrid"></div>
+        <br>
+        <button class="btn btn-danger" onclick="closeWishlist()">Close</button>
+    </div>
+</div>
+
+<!-- Address modal -->
+<div id="addressModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:50;">
+    <div style="background:white; max-width:480px; margin:60px auto; border-radius:12px; padding:24px; max-height:80vh; overflow-y:auto;">
+        <h3 id="addressModalTitle">My Delivery Address</h3>
+        <p style="font-size:13px; color:#888;">Fields marked <span style="color:#dc2626;">*</span> are required before an order can be placed.</p>
+
+        <label>Address Line <span style="color:#dc2626;">*</span></label>
+        <input type="text" id="addrLine" required style="width:100%; padding:8px; margin-bottom:10px;">
+
+        <label>City <span style="color:#dc2626;">*</span></label>
+        <input type="text" id="addrCity" required style="width:100%; padding:8px; margin-bottom:10px;">
+
+        <label>State</label>
+        <input type="text" id="addrState" style="width:100%; padding:8px; margin-bottom:10px;">
+
+        <label>Pincode <span style="color:#dc2626;">*</span></label>
+        <input type="text" id="addrPincode" required style="width:100%; padding:8px; margin-bottom:10px;">
+
+        <label>Phone <span style="color:#dc2626;">*</span></label>
+        <input type="text" id="addrPhone" required style="width:100%; padding:8px; margin-bottom:14px;">
+
+        <div style="display:flex; gap:10px;">
+            <button class="btn btn-success" onclick="saveAddress()">Save Address</button>
+            <button class="btn btn-danger" onclick="closeAddress()">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Spending / Revenue Analysis modal -->
+<div id="spendingModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:50;">
+    <div style="background:white; max-width:640px; margin:40px auto; border-radius:12px; padding:24px; max-height:85vh; overflow-y:auto;">
+        <h3>My Spending — Revenue Analysis</h3>
+
+        <div class="stats-container" id="spendingStats">
+            <div class="stat-card"><h4>Total Spent</h4><p id="spendTotal">-</p></div>
+            <div class="stat-card"><h4>Total Orders</h4><p id="spendOrders">-</p></div>
+            <div class="stat-card"><h4>Avg Order Value</h4><p id="spendAov">-</p></div>
+        </div>
+
+        <br>
+        <h4>Monthly Spending Trend</h4>
+        <canvas id="spendingTrendChart" height="140"></canvas>
+
+        <br><br>
+        <h4>Spending by Category</h4>
+        <canvas id="spendingCategoryChart" height="140"></canvas>
+        <p id="spendingEmptyNote" style="display:none; color:#888; text-align:center;">No purchases yet — your spending analysis will appear here once you place an order.</p>
+
+        <br>
+        <button class="btn btn-danger" onclick="closeSpending()">Close</button>
+    </div>
+</div>
+
+<!-- Rate Product modal -->
+<div id="rateModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:60;">
+    <div style="background:white; max-width:420px; margin:80px auto; border-radius:12px; padding:24px;">
+        <h3>Rate This Product</h3>
+        <div id="rateProductName" style="font-weight:600; margin-bottom:10px; color:#333;"></div>
+
+        <div id="rateStars" style="font-size:32px; letter-spacing:8px; margin-bottom:16px;">
+            <span data-star="1" onclick="selectRatingStars(1)" style="cursor:pointer; color:#ccc;">★</span><span data-star="2" onclick="selectRatingStars(2)" style="cursor:pointer; color:#ccc;">★</span><span data-star="3" onclick="selectRatingStars(3)" style="cursor:pointer; color:#ccc;">★</span><span data-star="4" onclick="selectRatingStars(4)" style="cursor:pointer; color:#ccc;">★</span><span data-star="5" onclick="selectRatingStars(5)" style="cursor:pointer; color:#ccc;">★</span>
+        </div>
+
+        <textarea id="rateReviewText" placeholder="Write a short review (optional)" rows="3"
+                  style="width:100%; padding:8px; margin-bottom:16px; box-sizing:border-box; font-family:inherit;"></textarea>
+
+        <div style="display:flex; gap:10px;">
+            <button class="btn btn-cta" onclick="submitRating()">Submit Rating</button>
+            <button class="btn btn-danger" onclick="closeRateModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script>
+
+const customerId = localStorage.getItem("customer_id");
+let cart = {};
+let productCache = {};
+let wishlistProductIds = new Set();
+let activeCategoryId = null;
+
+const CATEGORY_ICONS = [
+    "fa-mobile-screen", "fa-shirt", "fa-couch", "fa-book-open", "fa-utensils",
+    "fa-dumbbell", "fa-baby-carriage", "fa-car", "fa-paw", "fa-gem",
+    "fa-laptop", "fa-heart-pulse", "fa-gamepad", "fa-house-chimney", "fa-blender",
+];
+
+document.getElementById("welcomeText").innerText =
+    "Welcome, " + (localStorage.getItem("customer_name") || "Customer");
+
+loadProducts();
+loadCategoryStrip();
+loadRecommendations();
+loadWishlistIds();
+
+document.getElementById("searchInput").addEventListener("keyup", function(e){
+    if(e.key === "Enter") onSearch();
+});
+
+function onSearch(){
+    const q = document.getElementById("searchInput").value.trim();
+    loadProducts(q);
+}
+
+async function loadCategoryStrip(){
+    const strip = document.getElementById("categoryStrip");
+    try {
+        const res = await fetch("/categories");
+        if(!res.ok) throw new Error("failed");
+        const categories = await res.json();
+        if(!categories.length){
+            strip.innerHTML = "";
+            return;
+        }
+        strip.innerHTML = `
+            <div class="category-box${activeCategoryId === null ? ' selected' : ''}" onclick="filterByCategory(null)" style="${activeCategoryId === null ? 'border-color:#2874f0;' : ''}">
+                <div class="category-box-icon"><i class="fa-solid fa-border-all"></i></div>
+                <div class="category-box-name">All</div>
+            </div>
+        ` + categories.map((c, i) => `
+            <div class="category-box" onclick="filterByCategory(${c.id})" style="${activeCategoryId === c.id ? 'border-color:#2874f0;' : ''}">
+                <div class="category-box-icon"><i class="fa-solid ${CATEGORY_ICONS[i % CATEGORY_ICONS.length]}"></i></div>
+                <div class="category-box-name">${c.name}</div>
+            </div>
+        `).join("");
+    } catch (e) {
+        strip.innerHTML = "";
+    }
+}
+
+function filterByCategory(categoryId){
+    activeCategoryId = categoryId;
+    loadCategoryStrip();
+    loadProducts(document.getElementById("searchInput").value.trim());
+}
+
+async function loadProducts(search){
+
+    document.getElementById("resultsHeading").innerText = search ? `Results for "${search}"` : "All Products";
+
+    let url = "/products?status=active";
+    if(search){
+        url += "&search=" + encodeURIComponent(search);
+    }
+    if(activeCategoryId){
+        url += "&category_id=" + activeCategoryId;
+    }
+
+    const [productsRes, vendorsRes] = await Promise.all([
+        fetch(url),
+        fetch("/vendors")
+    ]);
+
+    if(!productsRes.ok){
+        document.getElementById("productGrid").innerHTML = "<p>Unable to load products.</p>";
+        return;
+    }
+
+    const products = await productsRes.json();
+    const vendors = vendorsRes.ok ? await vendorsRes.json() : [];
+
+    const vendorNameById = {};
+    vendors.forEach(v => { vendorNameById[v.id] = v.business_name; });
+
+    products.forEach(p => productCache[p.id] = p);
+
+    renderProductGrid("productGrid", products, vendorNameById);
+}
+
+function isOutOfStock(p){
+    return (p.quantity_available !== undefined && p.quantity_available !== null) && p.quantity_available <= 0;
+}
+
+function productMetaHtml(p, productId){
+    const ratingHtml = (p.rating !== undefined && p.rating !== null)
+        ? `<span class="product-card-rating">⭐ ${p.rating.toFixed ? p.rating.toFixed(1) : p.rating} <span style="color:#888;">(${p.rating_count || 0})</span></span>`
+        : `<span class="product-card-rating" style="color:#888;">No ratings yet</span>`;
+
+    const stockHtml = isOutOfStock(p)
+        ? `<span class="product-card-outofstock" style="color:#dc2626; font-weight:600;">Out of Stock</span>`
+        : "";
+
+    const rateButtonHtml = productId !== undefined && productId !== null
+        ? `<button onclick="event.stopPropagation(); openRateModal(${productId});"
+                   style="border:none; background:none; color:#2563eb; cursor:pointer; font-size:12px; padding:0; margin-top:3px; text-decoration:underline;">
+             Rate this product
+           </button>`
+        : "";
+
+    return `
+        <div class="product-card-meta" style="display:flex; justify-content:space-between; align-items:center; margin-top:4px; font-size:13px;">
+            ${ratingHtml}
+        </div>
+        ${stockHtml ? `<div class="product-card-stock-line" style="font-size:13px; margin-top:2px;">${stockHtml}</div>` : ""}
+        <div class="product-card-rate-line">${rateButtonHtml}</div>
+    `;
+}
+
+function productActionButtonsHtml(p){
+    if(isOutOfStock(p)){
+        return `
+            <button class="btn btn-primary" disabled style="opacity:0.5; cursor:not-allowed;">Add to Cart</button>
+            <button class="btn btn-success" disabled style="opacity:0.5; cursor:not-allowed;">Buy Now</button>
+        `;
+    }
+    return `
+        <button class="btn btn-primary" onclick="addToCart(${p.id})">Add to Cart</button>
+        <button class="btn btn-success" onclick="buyNow(${p.id})">Buy Now</button>
+    `;
+}
+
+function renderProductGrid(gridId, products, vendorNameById){
+    const grid = document.getElementById(gridId);
+
+    if(products.length === 0){
+        grid.innerHTML = "<p>No products found.</p>";
+        return;
+    }
+
+    grid.innerHTML = products.map(p => {
+        const inWishlist = wishlistProductIds.has(p.id);
+        return `
+        <div class="product-card">
+            <div class="product-card-image" style="position:relative; cursor:pointer;" onclick="viewProduct(${p.id})">
+                ${
+                    p.image_url
+                        ? `<img src="${p.image_url}" alt="${p.name}">`
+                        : `<div class="product-card-noimage">No Image</div>`
+                }
+                <button onclick="toggleWishlist(event, ${p.id})"
+                        title="${inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}"
+                        style="position:absolute; top:8px; right:8px; border:none; background:white;
+                               border-radius:50%; width:32px; height:32px; cursor:pointer; font-size:16px;">
+                    ${inWishlist ? "❤️" : "🤍"}
+                </button>
+            </div>
+            <div class="product-card-body" onclick="viewProduct(${p.id})" style="cursor:pointer;">
+                <div class="product-card-name" title="${p.name}">${p.name}</div>
+                <div class="product-card-sku">Sold by ${(vendorNameById && vendorNameById[p.vendor_id]) || "Vendor #" + p.vendor_id}</div>
+                <div class="product-card-price">₹ ${p.price}</div>
+                ${productMetaHtml(p, p.id)}
+            </div>
+            <div class="product-card-actions">
+                ${productActionButtonsHtml(p)}
+            </div>
+        </div>
+    `;
+    }).join("");
+}
+
+async function viewProduct(productId){
+    try {
+        await fetch(`/customer/${customerId}/track-view/${productId}`, { method: "POST" });
+    } catch(e) {}
+}
+
+function addToCart(productId){
+    const product = productCache[productId];
+    if(!product) return;
+    if(isOutOfStock(product)){
+        alert(`${product.name} is currently out of stock.`);
+        return;
+    }
+    if(!cart[productId]){
+        cart[productId] = { product, quantity: 0 };
+    }
+    cart[productId].quantity += 1;
+    updateCartCount();
+    alert(`${product.name} added to cart`);
+}
+
+function updateCartCount(){
+    const count = Object.values(cart).reduce((sum, item) => sum + item.quantity, 0);
+    document.getElementById("cartCount").innerText = count;
+}
+
+function openCart(){
+    renderCart();
+    document.getElementById("cartModal").style.display = "block";
+}
+function closeCart(){
+    document.getElementById("cartModal").style.display = "none";
+}
+
+function renderCart(){
+    const items = Object.values(cart);
+    const container = document.getElementById("cartItems");
+
+    if(items.length === 0){
+        container.innerHTML = "<p>Your cart is empty.</p>";
+        document.getElementById("cartTotal").innerText = "0";
+        return;
+    }
+
+    container.innerHTML = items.map(item => `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #eee;">
+            <div>
+                <strong>${item.product.name}</strong><br>
+                ₹ ${item.product.price} x
+                <input type="number" min="1" value="${item.quantity}"
+                       style="width:50px;" onchange="setQuantity(${item.product.id}, this.value)">
+                       </div>
+            <button class="btn btn-danger" onclick="removeFromCart(${item.product.id})">Remove</button>
+        </div>
+    `).join("");
+
+    const total = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+    document.getElementById("cartTotal").innerText = total.toFixed(2);
+}
+
+function setQuantity(productId, qty){
+    qty = parseInt(qty);
+    if(qty <= 0){ removeFromCart(productId); return; }
+    cart[productId].quantity = qty;
+    updateCartCount();
+    renderCart();
+}
+
+function removeFromCart(productId){
+    delete cart[productId];
+    updateCartCount();
+    renderCart();
+}
+
+function getSelectedPaymentMethod(){
+    const checked = document.querySelector('input[name="paymentMethod"]:checked');
+    return checked ? checked.value : "cod";
+}
+
+function highlightPaymentOption(radioEl){
+    document.querySelectorAll('#paymentMethods .payment-option').forEach(el => el.classList.remove("selected"));
+    const label = radioEl.closest(".payment-option");
+    if(label) label.classList.add("selected");
+}
+
+function getSelectedBuyNowPaymentMethod(){
+    const checked = document.querySelector('input[name="buyNowPaymentMethod"]:checked');
+    return checked ? checked.value : "cod";
+}
+
+function highlightBuyNowPaymentOption(radioEl){
+    document.querySelectorAll('#buyNowPaymentMethods .payment-option').forEach(el => el.classList.remove("selected"));
+    const label = radioEl.closest(".payment-option");
+    if(label) label.classList.add("selected");
+}
+
+let pendingBuyNowProductId = null;
+
+function buyNow(productId){
+    const product = productCache[productId];
+    if(!product) return;
+    if(isOutOfStock(product)){
+        alert(`${product.name} is currently out of stock.`);
+        return;
+    }
+
+    pendingBuyNowProductId = productId;
+    document.getElementById("buyNowSummary").innerHTML = `
+        <strong>${product.name}</strong><br>
+        ₹ ${product.price} x
+        <input type="number" min="1" value="1" id="buyNowQty" style="width:60px;">
+    `;
+    document.getElementById("buyNowModal").style.display = "block";
+}
+
+function closeBuyNow(){
+    document.getElementById("buyNowModal").style.display = "none";
+    pendingBuyNowProductId = null;
+}
+
+async function confirmBuyNow(){
+    if(!pendingBuyNowProductId) return;
+    const qty = parseInt(document.getElementById("buyNowQty").value) || 1;
+    const paymentMethod = getSelectedBuyNowPaymentMethod();
+
+    try {
+        const res = await fetch(`/customer/checkout`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                customer_id: parseInt(customerId),
+                items: [{ product_id: pendingBuyNowProductId, quantity: qty }],
+                payment_method: paymentMethod
+            })
+        });
+        if(!res.ok){
+            const err = await res.json().catch(() => ({}));
+            alert(err.detail || "Could not place order. Check your saved address.");
+            return;
+        }
+        alert("Order placed successfully!");
+        closeBuyNow();
+        loadProducts();
+    } catch(e){
+        alert("Something went wrong placing the order.");
+    }
+}
+
+async function checkout(){
+    const items = Object.values(cart);
+    if(items.length === 0){ alert("Your cart is empty."); return; }
+
+    const paymentMethod = getSelectedPaymentMethod();
+    const promoCode = document.getElementById("promoCodeInput").value.trim();
+
+    try {
+        const res = await fetch(`/customer/checkout`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                customer_id: parseInt(customerId),
+                items: items.map(i => ({ product_id: i.product.id, quantity: i.quantity })),
+                payment_method: paymentMethod,
+                promotion_code: promoCode || null
+            })
+        });
+        if(!res.ok){
+            const err = await res.json().catch(() => ({}));
+            alert(err.detail || "Could not place order. Check your saved address.");
+            return;
+        }
+        alert("Order placed successfully!");
+        cart = {};
+        updateCartCount();
+        closeCart();
+        loadProducts();
+    } catch(e){
+        alert("Something went wrong placing the order.");
+    }
+}
+
+// ---------- Orders ----------
+function openOrders(){
+    loadOrders();
+    document.getElementById("ordersModal").style.display = "block";
+}
+function closeOrders(){
+    document.getElementById("ordersModal").style.display = "none";
+}
+async function loadOrders(){
+    const list = document.getElementById("ordersList");
+    list.innerHTML = "<p>Loading...</p>";
+    try {
+        const res = await fetch(`/customer/${customerId}/orders`);
+        const orders = res.ok ? await res.json() : [];
+        if(orders.length === 0){
+            list.innerHTML = "<p>You haven't placed any orders yet.</p>";
+            return;
+        }
+        list.innerHTML = orders.map(o => `
+            <div style="border-bottom:1px solid #eee; padding:10px 0;">
+                <strong>Order #${o.id}</strong> — ${o.status}<br>
+                <span style="color:#888; font-size:13px;">${new Date(o.created_at).toLocaleDateString()}</span><br>
+                Total: ₹ ${o.total_amount}
+            </div>
+        `).join("");
+    } catch(e){
+        list.innerHTML = "<p>Unable to load orders.</p>";
+    }
+}
+
+// ---------- Wishlist ----------
+async function loadWishlistIds(){
+    try {
+        const res = await fetch(`/customer/${customerId}/wishlist`);
+        if(!res.ok) return;
+        const items = await res.json();
+        wishlistProductIds = new Set(items.map(i => i.product_id));
+        document.getElementById("wishlistCount").innerText = wishlistProductIds.size;
+    } catch(e) {}
+}
+
+async function toggleWishlist(evt, productId){
+    evt.stopPropagation();
+    const inWishlist = wishlistProductIds.has(productId);
+    try {
+        const res = await fetch(`/customer/${customerId}/wishlist/${productId}`, {
+            method: inWishlist ? "DELETE" : "POST"
+        });
+        if(!res.ok) return;
+        if(inWishlist) wishlistProductIds.delete(productId);
+        else wishlistProductIds.add(productId);
+        document.getElementById("wishlistCount").innerText = wishlistProductIds.size;
+        loadProducts(document.getElementById("searchInput").value.trim());
+    } catch(e) {}
+}
+
+function openWishlist(){
+    loadWishlistGrid();
+    document.getElementById("wishlistModal").style.display = "block";
+}
+function closeWishlist(){
+    document.getElementById("wishlistModal").style.display = "none";
+}
+async function loadWishlistGrid(){
+    const grid = document.getElementById("wishlistGrid");
+    grid.innerHTML = "<p>Loading...</p>";
+    try {
+        const [wishRes, vendorsRes] = await Promise.all([
+            fetch(`/customer/${customerId}/wishlist`),
+            fetch("/vendors")
+        ]);
+        const items = wishRes.ok ? await wishRes.json() : [];
+        const vendors = vendorsRes.ok ? await vendorsRes.json() : [];
+        const vendorNameById = {};
+        vendors.forEach(v => { vendorNameById[v.id] = v.business_name; });
+
+        // Wishlist API returns flat items (product_id, product_name, price, ...),
+        // not a nested `product` object — reshape into the product-card shape.
+        const products = items.map(i => ({
+            id: i.product_id,
+            name: i.product_name,
+            price: i.price,
+            image_url: i.image_url,
+            vendor_id: i.vendor_id,
+            rating: i.rating,
+            rating_count: i.rating_count,
+            quantity_available: i.quantity_available
+        }));
+        products.forEach(p => productCache[p.id] = p);
+        renderProductGrid("wishlistGrid", products, vendorNameById);
+        if(products.length === 0) grid.innerHTML = "<p>Your wishlist is empty.</p>";
+    } catch(e){
+        grid.innerHTML = "<p>Unable to load wishlist.</p>";
+    }
+}
+
+// ---------- Address ----------
+function openAddress(){
+    loadAddress();
+    document.getElementById("addressModal").style.display = "block";
+}
+function closeAddress(){
+    document.getElementById("addressModal").style.display = "none";
+}
+async function loadAddress(){
+    try {
+        const res = await fetch(`/customer/${customerId}/address`);
+        if(!res.ok) return;
+        const addr = await res.json();
+        if(!addr) return;
+        document.getElementById("addrLine").value = addr.address_line || "";
+        document.getElementById("addrCity").value = addr.city || "";
+        document.getElementById("addrState").value = addr.state || "";
+        document.getElementById("addrPincode").value = addr.pincode || "";
+        document.getElementById("addrPhone").value = addr.phone || "";
+    } catch(e) {}
+}
+async function saveAddress(){
+    const payload = {
+        address_line: document.getElementById("addrLine").value.trim(),
+        city: document.getElementById("addrCity").value.trim(),
+        state: document.getElementById("addrState").value.trim(),
+        pincode: document.getElementById("addrPincode").value.trim(),
+        phone: document.getElementById("addrPhone").value.trim()
+    };
+    if(!payload.address_line || !payload.city || !payload.pincode || !payload.phone){
+        alert("Please fill all required fields.");
+        return;
+    }
+    try {
+        const res = await fetch(`/customer/${customerId}/address`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+        if(!res.ok){ alert("Could not save address."); return; }
+        alert("Address saved.");
+        closeAddress();
+    } catch(e){
+        alert("Something went wrong.");
+    }
+}
+
+// ---------- Spending ----------
+let spendingTrendChartInstance = null;
+let spendingCategoryChartInstance = null;
+
+function openSpending(){
+    loadSpending();
+    document.getElementById("spendingModal").style.display = "block";
+}
+function closeSpending(){
+    document.getElementById("spendingModal").style.display = "none";
+}
+async function loadSpending(){
+    try {
+        // There is no /customer/{id}/spending route — the real endpoint is
+        // the customer-analytics revenue-analysis report, which returns
+        // monthly_trend: [{month, revenue, orders}] and
+        // category_breakdown: [{category_name, revenue, units}].
+        const res = await fetch(`/customer-analytics/customer/${customerId}/revenue-analysis`);
+        if(!res.ok) return;
+        const data = await res.json();
+
+        document.getElementById("spendTotal").innerText = "₹ " + (data.total_spent || 0);
+        document.getElementById("spendOrders").innerText = data.total_orders || 0;
+        document.getElementById("spendAov").innerText = "₹ " + (data.avg_order_value || 0);
+
+        const hasData = (data.total_orders || 0) > 0;
+        document.getElementById("spendingEmptyNote").style.display = hasData ? "none" : "block";
+
+        if(spendingTrendChartInstance) spendingTrendChartInstance.destroy();
+        if(spendingCategoryChartInstance) spendingCategoryChartInstance.destroy();
+
+        const trendCtx = document.getElementById("spendingTrendChart").getContext("2d");
+        spendingTrendChartInstance = new Chart(trendCtx, {
+            type: "line",
+            data: {
+                labels: (data.monthly_trend || []).map(m => m.month),
+                datasets: [{
+                    label: "Monthly Spending",
+                    data: (data.monthly_trend || []).map(m => m.revenue),
+                    borderColor: "#2874f0",
+                    backgroundColor: "rgba(40,116,240,0.1)",
+                    tension: 0.3,
+                    fill: true
+                }]
+            }
+        });
+
+        const catCtx = document.getElementById("spendingCategoryChart").getContext("2d");
+        spendingCategoryChartInstance = new Chart(catCtx, {
+            type: "doughnut",
+            data: {
+                labels: (data.category_breakdown || []).map(c => c.category_name),
+                datasets: [{
+                    data: (data.category_breakdown || []).map(c => c.revenue),
+                    backgroundColor: ["#2874f0","#ff9f00","#e84393","#0f9d8b","#8e44ad","#e74c3c"]
+                }]
+            }
+        });
+    } catch(e) {}
+}
+
+// ---------- Ratings ----------
+let pendingRateProductId = null;
+let selectedStars = 0;
+
+function openRateModal(productId){
+    const product = productCache[productId];
+    pendingRateProductId = productId;
+    selectedStars = 0;
+    document.getElementById("rateProductName").innerText = product ? product.name : "";
+    document.getElementById("rateReviewText").value = "";
+    selectRatingStars(0);
+    document.getElementById("rateModal").style.display = "block";
+}
+function closeRateModal(){
+    document.getElementById("rateModal").style.display = "none";
+    pendingRateProductId = null;
+}
+function selectRatingStars(n){
+    selectedStars = n;
+    document.querySelectorAll("#rateStars span").forEach(s => {
+        s.style.color = parseInt(s.dataset.star) <= n ? "#ff9f00" : "#ccc";
+    });
+}
+async function submitRating(){
+    if(!pendingRateProductId) return;
+    if(selectedStars === 0){ alert("Please select a star rating."); return; }
+    try {
+        const res = await fetch(`/products/${pendingRateProductId}/ratings`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                customer_id: parseInt(customerId),
+                stars: selectedStars,
+                review_text: document.getElementById("rateReviewText").value.trim()
+            })
+        });
+        if(!res.ok){
+            const err = await res.json().catch(() => ({}));
+            alert(err.detail || "Could not submit rating.");
+            return;
+        }
+        alert("Thanks for rating!");
+        closeRateModal();
+        loadProducts(document.getElementById("searchInput").value.trim());
+    } catch(e){
+        alert("Something went wrong.");
+    }
+}
+
+// ---------- Recommendations ----------
+async function loadRecommendations(){
+    const grid = document.getElementById("recGrid");
+    try {
+        const [recRes, vendorsRes] = await Promise.all([
+            fetch(`/customer-analytics/recommendations/${customerId}`),
+            fetch("/vendors")
+        ]);
+        if(!recRes.ok){ grid.innerHTML = ""; document.getElementById("recommendationsSection").style.display = "none"; return; }
+        const recData = await recRes.json();
+        // Response is {customer_id, recommendations: [...], strategy}, with
+        // each item keyed by product_id rather than id.
+        const products = (recData.recommendations || []).map(r => ({
+            id: r.product_id,
+            name: r.name,
+            price: r.price,
+            image_url: r.image_url,
+            vendor_id: r.vendor_id,
+            rating: r.rating,
+            rating_count: r.rating_count,
+            quantity_available: r.quantity_available
+        }));
+        if(!products.length){ document.getElementById("recommendationsSection").style.display = "none"; return; }
+
+        const vendors = vendorsRes.ok ? await vendorsRes.json() : [];
+        const vendorNameById = {};
+        vendors.forEach(v => { vendorNameById[v.id] = v.business_name; });
+
+        products.forEach(p => productCache[p.id] = p);
+        renderProductGrid("recGrid", products, vendorNameById);
+    } catch(e){
+        document.getElementById("recommendationsSection").style.display = "none";
+    }
+}
+
+// ---------- Profile ----------
+function getInitial(){
+    const name = localStorage.getItem("customer_name") || "U";
+    return name.trim().charAt(0).toUpperCase();
+}
+
+document.getElementById("profileAvatar").innerText = getInitial();
+
+function openProfile(){
+    loadProfile();
+    document.getElementById("profileModal").style.display = "block";
+}
+function closeProfile(){
+    document.getElementById("profileModal").style.display = "none";
+}
+
+async function loadProfile(){
+    document.getElementById("profileModalAvatar").innerText = getInitial();
+    document.getElementById("profileModalName").innerText = localStorage.getItem("customer_name") || "Customer";
+
+    try {
+        const [custRes, ordersRes, wishRes, spendRes] = await Promise.all([
+            fetch(`/customer/${customerId}`),
+            fetch(`/customer/${customerId}/orders`),
+            fetch(`/customer/${customerId}/wishlist`),
+            fetch(`/customer-analytics/customer/${customerId}/revenue-analysis`)
+        ]);
+
+        const cust = custRes.ok ? await custRes.json() : {};
+        const orders = ordersRes.ok ? await ordersRes.json() : [];
+        const wishlist = wishRes.ok ? await wishRes.json() : [];
+        const spending = spendRes.ok ? await spendRes.json() : {};
+
+        document.getElementById("profileModalEmail").innerText = cust.email || "";
+        document.getElementById("profileOrderCount").innerText = orders.length;
+        document.getElementById("profileWishlistCount").innerText = wishlist.length;
+        document.getElementById("profileTotalSpent").innerText = "₹ " + (spending.total_spent || 0);
+
+        document.getElementById("profileDetailsBox").innerHTML = `
+            <div><strong>Name:</strong> ${cust.name || "-"}</div>
+            <div><strong>Email:</strong> ${cust.email || "-"}</div>
+            <div><strong>Phone:</strong> ${cust.phone || "-"}</div>
+            <div><strong>Member since:</strong> ${cust.created_at ? new Date(cust.created_at).toLocaleDateString() : "-"}</div>
+        `;
+    } catch(e){
+        document.getElementById("profileDetailsBox").innerHTML = "Unable to load profile details.";
+    }
+}
+
+function logoutCustomer(){
+    localStorage.removeItem("customer_id");
+    localStorage.removeItem("customer_name");
+    window.location.href = "/login";
+}
+</script>
+{% endblock %}

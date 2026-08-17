@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ShopSense Customer{% endblock %}</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/professional-theme.css') }}">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+<script>
+    if(!localStorage.getItem("customer_id")){
+        window.location="/customer-login";
+    }
+</script>
+
+<div class="sidebar">
+
+    <div class="logo">
+        <h2>ShopSense</h2>
+        <span>Customer Portal</span>
+    </div>
+
+    <ul class="menu">
+
+        <li>
+            <a href="/customer-dashboard">
+                <i class="fa-solid fa-house"></i>
+                <span>Home</span>
+            </a>
+        </li>
+
+        <li>
+            <a href="/customer-dashboard">
+                <i class="fa-solid fa-store"></i>
+                <span>Browse Products</span>
+            </a>
+        </li>
+
+        <li>
+            <a href="#" onclick="openCart(); return false;">
+                <i class="fa-solid fa-cart-shopping"></i>
+                <span>My Cart</span>
+            </a>
+        </li>
+
+        <li>
+            <a href="#" onclick="openOrders(); return false;">
+                <i class="fa-solid fa-box"></i>
+                <span>My Orders</span>
+            </a>
+        </li>
+
+        <li>
+            <a href="#" onclick="if(typeof openSpending==='function'){openSpending();}else{window.location='/customer-dashboard';} return false;">
+                <i class="fa-solid fa-sack-dollar"></i>
+                <span>My Spending</span>
+            </a>
+        </li>
+
+        <li>
+            <a href="#recommendationsSection">
+                <i class="fa-solid fa-star"></i>
+                <span>Recommendations</span>
+            </a>
+        </li>
+
+        <li>
+            <a href="/customer-profile-page">
+                <i class="fa-solid fa-user"></i>
+                <span>My Profile</span>
+            </a>
+        </li>
+
+    </ul>
+
+    <div class="sidebar-footer">
+
+        <button class="logout-btn-side" onclick="logout()">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            Logout
+        </button>
+
+    </div>
+
+</div>
+
+<div class="main">
+
+    <div class="topbar">
+
+        <h2>{% block heading %}Customer Dashboard{% endblock %}</h2>
+
+        <div id="topbarProfileIcon" onclick="window.location='/customer-profile-page'"
+             title="My Profile"
+             style="width:40px; height:40px; border-radius:50%; background:#2563eb; color:white;
+                    display:flex; align-items:center; justify-content:center; font-size:16px;
+                    font-weight:700; cursor:pointer; flex-shrink:0;">
+            ?
+        </div>
+
+    </div>
+
+    <div class="content">
+
+        {% block content %}
+        {% endblock %}
+
+    </div>
+
+</div>
+
+<script>
+function logout() {
+    localStorage.removeItem("customer_id");
+    localStorage.removeItem("customer_name");
+    window.location="/customer-login";
+}
+
+(function initProfileIcon(){
+    const name = localStorage.getItem("customer_name");
+    const icon = document.getElementById("topbarProfileIcon");
+    if(icon && name && name.trim().length > 0){
+        icon.innerText = name.trim().charAt(0).toUpperCase();
+    }
+})();
+</script>
+
+</body>
+</html>
